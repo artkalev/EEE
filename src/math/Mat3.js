@@ -14,6 +14,7 @@ EEE.Mat3 = class Mat3{
     */
 
     constructor(){
+        this.type = EEE.MATH_MATRIX3;
         this.data = new Float32Array(9);
     }
 

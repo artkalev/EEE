@@ -4,8 +4,11 @@ EEE.Init = function(){
     EEE.renderer = new EEE.WebGLRenderer();
     EEE.scene = new EEE.Scene();
     console.log("'EEE' Initialization Completed!");
-}
+    console.log("Starting mainloop.");
+    EEE.Update();
 
-EEE.Update = function(){
-    
+    window.addEventListener("resize", function(){
+        EEE.renderer.OnResize();
+    });
+    EEE.renderer.OnResize();
 }

@@ -1,5 +1,6 @@
 EEE.Quat = class Quat{
     constructor(){
+        this.type = EEE.MATH_QUATERNION;
         this.data = new Float32Array([0,0,0,1]);
     }
 

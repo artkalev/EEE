@@ -15,7 +15,8 @@ EEE.Mat4 = class Mat4{
     */
     
     constructor(){
-        this.data = Float32Array(16);
+        this.type = EEE.MATH_MATRIX4;
+        this.data = new Float32Array(16);
     }
 
     get m00(){ return this.data[0]; }   get m10(){ return this.data[4]; }   get m20(){ return this.data[8]; }    get m30(){ return this.data[12]; }
@@ -62,6 +63,11 @@ EEE.Mat4 = class Mat4{
         ];
 
         this.data.set(t);
+        return this;
+    }
+
+    PerspectiveProjection( fov, aspect, near, far ){
+        // todo
         return this;
     }
 };

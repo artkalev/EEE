@@ -1,5 +1,6 @@
 EEE.Vec2 = class Vec2{
 	constructor(x,y){
+		this.type = EEE.MATH_VECTOR2;
 		this.data = new Float32Array([x||0,y||0]);
 	}
 	

@@ -1,5 +1,6 @@
 EEE.Vec3 = class Vec3{
 	constructor( x,y,z ){
+		this.type = EEE.MATH_VECTOR3;
 		this.data = new Float32Array([x||0, y||0, z||0]);
 	}
 	get x(){ return this.data[0]; } set x(v){ this.data[0] = v; }

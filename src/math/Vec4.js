@@ -1,5 +1,6 @@
 EEE.Vec4 = class Vec4{
     constructor(){
+		this.type = EEE.MATH_VECTOR4;
         this.data = new Float32Array(4);
     }
     get x(){ return this.data[0]; }

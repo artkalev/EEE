@@ -5,6 +5,7 @@ EEE.Obj = class Obj{
 		this.children = [];
 		this.parent = null;
 		this.modules = [];
+		this.graphics = null;
 	}
 	
 	AddModule( module ){

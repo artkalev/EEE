@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+    <head>
+        <script src="../build/EEE.js"></script>
+        <style>
+            body{ padding : 0; }
+        </style>
+    </head>
+    <body>
+        <script>
+            EEE.Init();
+            var testObj = new EEE.Obj();
+            testObj.graphics = EEE.ASSETS.meshes["triangle"];  
+            EEE.scene.AddObj(testObj);
+        </script>
+    </body>
+</html>
