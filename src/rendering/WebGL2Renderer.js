@@ -1,8 +1,8 @@
-E2.WebGL2Renderer = class WebGL2Renderer{
+EEE.WebGL2Renderer = class WebGL2Renderer{
 	constructor(){
 
-		this.matrix_projection = new E2.Mat4();
-		this.matrix_view = new E2.Mat4();
+		this.matrix_projection = new EEE.Mat4();
+		this.matrix_view = new EEE.Mat4();
 
 		this.canvas = document.createElement("canvas");
 		this.gl = this.canvas.getContext("webgl");

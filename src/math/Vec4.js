@@ -1,4 +1,4 @@
-E2.Vec4 = class Vec4{
+EEE.Vec4 = class Vec4{
     constructor(){
         this.data = new Float32Array(4);
     }

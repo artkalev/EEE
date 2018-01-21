@@ -1,4 +1,4 @@
-E2.Obj = class Obj{
+EEE.Obj = class Obj{
 	constructor(){
 		this.name = "node";
 		this.children = [];

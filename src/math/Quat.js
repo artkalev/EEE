@@ -1,4 +1,4 @@
-E2.Quat = class Quat{
+EEE.Quat = class Quat{
     constructor(){
         this.data = new Float32Array([0,0,0,1]);
     }
@@ -54,7 +54,7 @@ E2.Quat = class Quat{
     }
 
     GetAngleAxis(){
-        result = { angle:0, axis:new E2.Vec3() };
+        result = { angle:0, axis:new EEE.Vec3() };
         result.angle = 2 * Math.acos(this.data[3]);
         var q = Math.sqrt( 1-this.data[3]*this.data[3] );
         if(q < 0.001){
@@ -79,7 +79,7 @@ E2.Quat = class Quat{
     }
 
     GetMat3(){
-        var result = new E2.Mat3();
+        var result = new EEE.Mat3();
         var xx = this.data[0]*this.data[0];
         var xy = this.data[0]*this.data[1];
         var xz = this.data[0]*this.data[2];

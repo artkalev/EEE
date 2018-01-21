@@ -1,4 +1,4 @@
-E2.Vec3 = class Vec3{
+EEE.Vec3 = class Vec3{
 	constructor( x,y,z ){
 		this.data = new Float32Array([x||0, y||0, z||0]);
 	}

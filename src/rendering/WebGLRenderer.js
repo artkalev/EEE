@@ -1,4 +1,4 @@
-E2.WebGLRenderer = class WebGLRenderer{
+EEE.WebGLRenderer = class WebGLRenderer{
 	constructor(){
 		this.canvas = document.createElement("canvas");
 		this.gl = this.canvas.getContext("webgl");

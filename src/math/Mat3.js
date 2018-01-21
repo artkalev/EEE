@@ -1,4 +1,4 @@
-E2.Mat3 = class Mat3{
+EEE.Mat3 = class Mat3{
 
     /*
         Matrix uses column major order for OpenGL compatibility

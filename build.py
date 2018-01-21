@@ -4,7 +4,7 @@ import sys
 def main():
     print("started building")
 
-    outFile = open( "build/E2.js", "w" )
+    outFile = open( "build/EEE.js", "w" )
     outFile.write( "// built with python\n" );
 
     index = open("src/index.js", "r")
@@ -16,7 +16,7 @@ def main():
             
             try:
                 f = open("src"+"/"+path)
-                outFile.write("\n/* "+path+" */\n\n")
+                outFile.write("\n/* src/"+path+" */\n\n")
                 outFile.write( f.read() )
                 outFile.write("\n")
                 f.close()

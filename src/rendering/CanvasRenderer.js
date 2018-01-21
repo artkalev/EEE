@@ -1,4 +1,4 @@
-E2.CanvasRenderer = class CanvasRenderer{
+EEE.CanvasRenderer = class CanvasRenderer{
     constructor(){
         
     }   

@@ -1,4 +1,4 @@
-E2.Mat4 = class Mat4{
+EEE.Mat4 = class Mat4{
     /*
         Column major format for opengl
 
