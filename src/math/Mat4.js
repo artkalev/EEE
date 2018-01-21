@@ -28,6 +28,16 @@ EEE.Mat4 = class Mat4{
     set m02(v){ this.data[2] = v; } set m12(v){ this.data[6] = v; } set m22(v){ this.data[10] = v; } set m32(v){ this.data[14] = v; }
     set m02(v){ this.data[3] = v; } set m13(v){ this.data[7] = v; } set m23(v){ this.data[11] = v; } set m33(v){ this.data[15] = v; }
 
+    Identity(){
+        this.data.set([
+            1,0,0,0,
+            0,1,0,0,
+            0,0,1,0,
+            0,0,0,1
+        ]);
+        return this;
+    }
+
     Multiply( other ){
         var t = [
             this.m00*other.m00 + this.m01*other.m10 + this.m02*other.m20 + this.m03*other.m30,

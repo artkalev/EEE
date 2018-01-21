@@ -475,6 +475,16 @@ EEE.Mat4 = class Mat4{
     set m02(v){ this.data[2] = v; } set m12(v){ this.data[6] = v; } set m22(v){ this.data[10] = v; } set m32(v){ this.data[14] = v; }
     set m02(v){ this.data[3] = v; } set m13(v){ this.data[7] = v; } set m23(v){ this.data[11] = v; } set m33(v){ this.data[15] = v; }
 
+    Identity(){
+        this.data.set([
+            1,0,0,0,
+            0,1,0,0,
+            0,0,1,0,
+            0,0,0,1
+        ]);
+        return this;
+    }
+
     Multiply( other ){
         var t = [
             this.m00*other.m00 + this.m01*other.m10 + this.m02*other.m20 + this.m03*other.m30,
@@ -503,6 +513,51 @@ EEE.Mat4 = class Mat4{
     }
 };
 
+/* src/core/Init.js */
+
+EEE.Init = function(){
+    console.log("Started 'EEE' Initialization");
+    EEE.loader = new EEE.Loader();
+    EEE.renderer = new EEE.WebGLRenderer();
+    EEE.scene = new EEE.Scene();
+    console.log("'EEE' Initialization Completed!");
+}
+
+EEE.Update = function(){
+    
+}
+
+/* src/core/Scene.js */
+
+EEE.Scene = class Scene{
+    constructor(){
+        this.objects = [];
+    }
+
+    AddObj( o ){
+        this.objects.push(o);
+    }
+    
+};
+
+/* src/core/Obj.js */
+
+EEE.Obj = class Obj{
+	constructor(){
+		this.name = "node";
+		this.uid = Math.random()*1000000000000;
+		this.children = [];
+		this.parent = null;
+		this.modules = [];
+	}
+	
+	AddModule( module ){
+		var m = new module( this );
+		this.modules.push( m );
+		return m;
+	}
+};
+
 /* src/rendering/CanvasRenderer.js */
 
 EEE.CanvasRenderer = class CanvasRenderer{
@@ -521,13 +576,37 @@ EEE.CanvasRenderer = class CanvasRenderer{
 
 EEE.WebGLRenderer = class WebGLRenderer{
 	constructor(){
+
+		this.matrix_view = new EEE.Mat4().Identity();
+		this.matrix_projection = new EEE.Mat4().Identity();
+
 		this.canvas = document.createElement("canvas");
 		this.gl = this.canvas.getContext("webgl");
 		if(!this.gl){ console.log("No WebGL Support!"); return; }
 		document.body.appendChild( this.canvas );
 	}
-	DrawMesh(){
 
+	Render( scene, camera ){
+		
+	}
+
+	DrawMesh( mesh ){
+
+		// if mesh does not have gl properties they must be created
+		// gl attribute and index buffers will be added to mesh object
+		// this can be a bit expensive bt it will only affect first frame the mesh is drawn on.
+		// all scene meshes probably need to be initialized ( drawn the 1st time ) outside gameloop.
+		if(!mesh.gl){
+			mesh.gl = {
+				// mesh must contain these 3 attributes to be usable!
+				attributes : {
+					"a_vertex" : this.gl.createBuffer(),
+					"a_normal" : this.gl.createBuffer(),
+					"a_uv0" : this.gl.createBuffer()
+				},
+				indices : []
+			};
+		}
 	}
 };
 
@@ -552,19 +631,10 @@ EEE.WebGL2Renderer = class WebGL2Renderer{
 	}
 };
 
-/* src/core/Obj.js */
+/* src/loader/Loader.js */
 
-EEE.Obj = class Obj{
-	constructor(){
-		this.name = "node";
-		this.children = [];
-		this.parent = null;
-		this.modules = [];
-	}
-	
-	AddModule( module ){
-		var m = new module( this );
-		this.modules.push( m );
-		return m;
-	}
-};
+EEE.Loader = class Loader{
+    constructor(){
+        
+    }
+}
