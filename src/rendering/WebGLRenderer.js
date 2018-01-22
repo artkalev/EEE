@@ -1,5 +1,6 @@
 EEE.WebGLRenderer = class WebGLRenderer{
 	constructor(){
+		this.matrix_model = new EEE.Mat4().Identity(); 
 		this.matrix_view = new EEE.Mat4().Identity();
 		this.matrix_projection = new EEE.Mat4().Identity();
 
@@ -29,12 +30,14 @@ EEE.WebGLRenderer = class WebGLRenderer{
 					"varying vec4 v_color;",
 					"varying vec2 v_uv0;",
 
+					"uniform mat4 u_matrix_model;",
+
 					"void main(){",
 					"	v_vertex = a_vertex;",
 					"	v_normal = a_normal;",
 					"	v_color = a_color;",
 					"	v_uv0 = a_uv0;",
-					"	gl_Position = vec4( a_vertex, 1.0 );",
+					"	gl_Position = u_matrix_model * vec4( a_vertex, 1.0 );",
 					"}"
 				].join("\n"),
 				[
@@ -49,6 +52,12 @@ EEE.WebGLRenderer = class WebGLRenderer{
 				].join("\n")
 			)
 		};
+		this.defaultMaterial = new EEE.Material([
+			{
+				depthTest : true,
+				program : this.programs.default
+			}
+		]);
 	}
 
 	OnResize(){
@@ -91,6 +100,7 @@ EEE.WebGLRenderer = class WebGLRenderer{
 			if(o.graphics){
 				switch( o.graphics.type ){
 					case EEE.GRAPHICS_MESH:
+						this.matrix_model = o.localToWorld;
 						this.DrawMesh( o.graphics );
 						break;
 					// todo add more drawing functions for sprites, particles etc
@@ -135,40 +145,44 @@ EEE.WebGLRenderer = class WebGLRenderer{
 			this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, null);
 		}
 
-		// setup shaderprogram
-		if(!material){
-			this.gl.useProgram( this.programs["default"] );
-			this.activeProgram = this.programs["default"];
-		}else{
-			this.gl.useProgram( material.glProgram );
-			this.activeProgram = material.glProgram;
+		// multiple material passes supported
+		// passes are drawn is order
+		var mat = material || this.defaultMaterial;
+		for(var i = 0; i < mat.passes.length; i++){
+			if(mat.passes[i].depthTest == true){
+				this.gl.enable(this.gl.DEPTH_TEST);
+			}
+
+			this.gl.useProgram( mat.passes[i].program );
+			this.activeProgram = mat.passes[i].program;
+
+			var matrixModelLoc = this.gl.getUniformLocation(this.activeProgram, "u_matrix_model");
+			this.gl.uniformMatrix4fv(matrixModelLoc, false, this.matrix_model.data);
+			// else if all attributes are already initialized
+			// bind all attributes and draw triangles
+			
+			this.gl.bindBuffer( this.gl.ARRAY_BUFFER, mesh.gl.attributes.a_vertex );
+			this.gl.enableVertexAttribArray(0);
+			this.gl.vertexAttribPointer( 0, 3, this.gl.FLOAT, false, 0, 0 );
+			
+			this.gl.bindBuffer( this.gl.ARRAY_BUFFER, mesh.gl.attributes.a_normal );
+			this.gl.enableVertexAttribArray(1);
+			this.gl.vertexAttribPointer( 1, 3, this.gl.BYTE, true, 0, 0 );	
+			
+			this.gl.bindBuffer( this.gl.ARRAY_BUFFER, mesh.gl.attributes.a_color );
+			this.gl.enableVertexAttribArray(2);
+			this.gl.vertexAttribPointer( 2, 4, this.gl.UNSIGNED_BYTE, true, 0, 0 );
+			
+			this.gl.bindBuffer( this.gl.ARRAY_BUFFER, mesh.gl.attributes.a_uv0 );
+			this.gl.enableVertexAttribArray(3);
+			this.gl.vertexAttribPointer( 3, 2, this.gl.FLOAT, false, 0, 0 );
+			
+			
+			this.gl.bindBuffer( this.gl.ELEMENT_ARRAY_BUFFER, mesh.gl.indices );
+			this.gl.drawElements( this.gl.TRIANGLES, mesh.indices.length, this.gl.UNSIGNED_SHORT, 0);
+
+			this.gl.bindBuffer( this.gl.ELEMENT_ARRAY_BUFFER, null );
+			this.gl.bindBuffer( this.gl.ARRAY_BUFFER, null );
 		}
-
-
-		// else if all attributes are already initialized
-		// bind all attributes and draw triangles
-		
-		this.gl.bindBuffer( this.gl.ARRAY_BUFFER, mesh.gl.attributes.a_vertex );
-		this.gl.enableVertexAttribArray(0);
-		this.gl.vertexAttribPointer( 0, 3, this.gl.FLOAT, false, 0, 0 );
-		
-		this.gl.bindBuffer( this.gl.ARRAY_BUFFER, mesh.gl.attributes.a_normal );
-		this.gl.enableVertexAttribArray(1);
-		this.gl.vertexAttribPointer( 1, 3, this.gl.BYTE, true, 0, 0 );	
-		
-		this.gl.bindBuffer( this.gl.ARRAY_BUFFER, mesh.gl.attributes.a_color );
-		this.gl.enableVertexAttribArray(2);
-		this.gl.vertexAttribPointer( 2, 4, this.gl.UNSIGNED_BYTE, true, 0, 0 );
-		
-		this.gl.bindBuffer( this.gl.ARRAY_BUFFER, mesh.gl.attributes.a_uv0 );
-		this.gl.enableVertexAttribArray(3);
-		this.gl.vertexAttribPointer( 3, 2, this.gl.FLOAT, false, 0, 0 );
-		
-		
-		this.gl.bindBuffer( this.gl.ELEMENT_ARRAY_BUFFER, mesh.gl.indices );
-		this.gl.drawElements( this.gl.TRIANGLES, mesh.indices.length, this.gl.UNSIGNED_SHORT, 0);
-
-		this.gl.bindBuffer( this.gl.ELEMENT_ARRAY_BUFFER, null );
-		this.gl.bindBuffer( this.gl.ARRAY_BUFFER, null );
 	}
 };

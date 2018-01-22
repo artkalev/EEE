@@ -9,8 +9,16 @@
         <script>
             EEE.Init();
             var testObj = new EEE.Obj();
-            testObj.graphics = EEE.ASSETS.meshes["triangle"];  
+            testObj.graphics = EEE.ASSETS.meshes["cube"];  
             EEE.scene.AddObj(testObj);
+
+            testObj.AddModule({
+                firstframe : function(){},
+                update : function(){
+                    this.owner.position.x = Math.sin(EEE.time);
+                    this.owner.matrixNeedsUpdate = true;
+                }
+            });
         </script>
     </body>
 </html>

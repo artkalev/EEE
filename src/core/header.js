@@ -15,6 +15,10 @@ EEE.MATH_MATRIX4 = 0x000007;
 EEE.GRAPHICS_MESH = 0x000010;
 EEE.GRAPHICS_SPRITE = 0x000011;
 
+// global variables
+EEE.time = Date.now() / 1000;
+
+// assets object
 EEE.ASSETS = {
     meshes : {},
     textures : {},

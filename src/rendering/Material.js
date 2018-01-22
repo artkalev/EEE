@@ -1,8 +1,6 @@
 EEE.Material = class Material{
-    constructor(){
-        this.passes = [
-            EEE.renderer.programs.default
-        ];
+    constructor( passes ){
+        this.passes = passes;
         this.uniforms = {};
     }
 }

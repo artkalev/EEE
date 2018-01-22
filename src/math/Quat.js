@@ -93,11 +93,17 @@ EEE.Quat = class Quat{
         var zz = this.data[2]*this.data[2];
         var zw = this.data[2]*this.data[3];
 
-        result.m00 = 1 - 2*(yy+zz);
-        result.m01 =     2*(xy-zw);
-        result.m02 =     2*(xz+yw);
+        result.m00  = 1 - 2 * ( yy + zz );
+        result.m01  =     2 * ( xy - zw );
+        result.m02  =     2 * ( xz + yw );
+        
+        result.m10  =     2 * ( xy + zw );
+        result.m11  = 1 - 2 * ( xx + zz );
+        result.m12  =     2 * ( yz - xw );
 
-        // todo........
+        result.m20  =     2 * ( xz - yw );
+        result.m21  =     2 * ( yz + xw );
+        result.m22  = 1 - 2 * ( xx + yy );
 
         return result;
     }
@@ -133,7 +139,8 @@ EEE.Quat = class Quat{
     }
 
     GetMat4(){
-        //todo
+        var m = this.GetMat3();
+        return m.GetMat4();
     }
 
     SetMat4(){

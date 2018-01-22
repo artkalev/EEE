@@ -19,6 +19,10 @@ EEE.MATH_MATRIX4 = 0x000007;
 EEE.GRAPHICS_MESH = 0x000010;
 EEE.GRAPHICS_SPRITE = 0x000011;
 
+// global variables
+EEE.time = Date.now() / 1000;
+
+// assets object
 EEE.ASSETS = {
     meshes : {},
     textures : {},
@@ -357,11 +361,17 @@ EEE.Quat = class Quat{
         var zz = this.data[2]*this.data[2];
         var zw = this.data[2]*this.data[3];
 
-        result.m00 = 1 - 2*(yy+zz);
-        result.m01 =     2*(xy-zw);
-        result.m02 =     2*(xz+yw);
+        result.m00  = 1 - 2 * ( yy + zz );
+        result.m01  =     2 * ( xy - zw );
+        result.m02  =     2 * ( xz + yw );
+        
+        result.m10  =     2 * ( xy + zw );
+        result.m11  = 1 - 2 * ( xx + zz );
+        result.m12  =     2 * ( yz - xw );
 
-        // todo........
+        result.m20  =     2 * ( xz - yw );
+        result.m21  =     2 * ( yz + xw );
+        result.m22  = 1 - 2 * ( xx + yy );
 
         return result;
     }
@@ -397,7 +407,8 @@ EEE.Quat = class Quat{
     }
 
     GetMat4(){
-        //todo
+        var m = this.GetMat3();
+        return m.GetMat4();
     }
 
     SetMat4(){
@@ -464,6 +475,15 @@ EEE.Mat3 = class Mat3{
     MultiplyVec3( other ){
 
     }
+
+    GetMat4(){
+        var m = new EEE.Mat4();
+        m.data[0] = this.data[0];   m.data[4] = this.data[4];   m.data[8]  = this.data[8];     m.data[12] = 0;
+        m.data[1] = this.data[1];   m.data[5] = this.data[5];   m.data[9]  = this.data[9];     m.data[13] = 0;
+        m.data[2] = this.data[2];   m.data[6] = this.data[6];   m.data[10] = this.data[10];    m.data[14] = 0;
+        m.data[3] = 0;              m.data[7] = 0;              m.data[11] = 0;                m.data[15] = 1;
+        return m;
+    }
 }
 
 /* src/math/Mat4.js */
@@ -484,9 +504,9 @@ EEE.Mat4 = class Mat4{
 
     */
     
-    constructor(){
+    constructor(data){
         this.type = EEE.MATH_MATRIX4;
-        this.data = new Float32Array(16);
+        this.data = data || new Float32Array(16);
     }
 
     get m00(){ return this.data[0]; }   get m10(){ return this.data[4]; }   get m20(){ return this.data[8]; }    get m30(){ return this.data[12]; }
@@ -536,6 +556,27 @@ EEE.Mat4 = class Mat4{
         return this;
     }
 
+    TRS( position, rotation, scale ){
+        this.Identity();
+        var T = new EEE.Mat4([
+            1,0,0,0,
+            0,1,0,0,
+            0,0,1,0,
+            position.x,position.y,position.z,1
+        ]);
+        var R = rotation.GetMat4();
+        
+        var S = new EEE.Mat4([
+            scale.x,0,0,0,
+            0,scale.y,0,0,
+            0,0,scale.z,0,
+            0,0,0,1
+        ]);
+
+        this.Multiply(T);
+        return this;
+    }
+
     PerspectiveProjection( fov, aspect, near, far ){
         // todo
         return this;
@@ -577,6 +618,45 @@ EEE.ASSETS.meshes["triangle"] = new EEE.Mesh(
     [ 0,1,2 ]
 );
 
+EEE.ASSETS.meshes["quad"] = new EEE.Mesh(
+    "quad",
+    [ -0.5,-0.5, 0.0,    -0.5, 0.5, 0.0,    0.5, 0.5, 0.0,    0.5, -0.5, 0.0  ],
+    [ 0,0,1, 0,0,1, 0,0,1, 0,0,1 ],
+    [ 0,0,0,255,   0,255,0,255,  0,0,255,255,   255,0,0,255  ],
+    [ 0.0,0.0,  0.0,1.0,  1.0,1.0,  1.0,0.0 ],
+    [ 0,1,2, 0,2,3 ]
+);
+
+EEE.ASSETS.meshes["cube"] = new EEE.Mesh(
+    "cube",
+    [ 
+        -0.5,-0.5,-0.5, -0.5, 0.5,-0.5,  0.5, 0.5,-0.5,  // z-
+        -0.5,-0.5,-0.5,  0.5, 0.5,-0.5,  0.5,-0.5,-0.5,  // z-
+         0.5,-0.5, 0.5, -0.5, 0.5, 0.5, -0.5,-0.5, 0.5,  // z+
+         0.5,-0.5, 0.5,  0.5, 0.5, 0.5, -0.5,-0.5, 0.5   // z+
+    ],
+    [ 
+         0, 0,-1,   0, 0,-1,   0, 0,-1,   0, 0,-1,   0, 0,-1,   0, 0,-1, // z-
+         0, 0, 1,   0, 0, 1,   0, 0, 1,   0, 0, 1,   0, 0, 1,   0, 0, 1  // z+
+    ],
+    [ 
+          0,  0,  0,255,      0,255,  0,255,    255,255,  0,255, // z-
+          0,  0,  0,255,    255,255,  0,255,    255,  0,  0,255, // z-
+        255,  0,255,255,      0,255,255,255,      0,  0,255,255, // z+
+        255,  0,255,255,    255,255,255,255,      0,  0,255,255  // z+
+    ],
+    [ 
+        0.0, 0.0,  0.0, 1.0,  1.0, 1.0, // z-
+        0.0, 0.0,  1.0, 1.0,  1.0, 0.0, // z-
+        0.0, 0.0,  1.0, 1.0,  1.0, 0.0, // z+
+        0.0, 0.0,  0.0, 1.0,  1.0, 0.0  // z+
+    ],
+    [ 
+         0, 1, 2,  3, 4, 5,
+         6, 7, 8,  9,10,11
+    ]
+);
+
 /* src/core/Init.js */
 
 EEE.Init = function(){
@@ -597,6 +677,8 @@ EEE.Init = function(){
 /* src/core/Update.js */
 
 EEE.Update = function(){
+    EEE.time = Date.now() / 1000;
+    EEE.scene.Update();
     EEE.renderer.Render( EEE.scene, EEE.scene.activeCamera );   
     requestAnimationFrame( EEE.Update );    
 }
@@ -615,6 +697,12 @@ EEE.Scene = class Scene{
     AddObj( o ){
         this.objects.push(o);
     }
+
+    Update(){
+        for(var i = 0 ; i < this.objects.length; i++){
+            this.objects[i].Update();
+        }
+    }
     
 };
 
@@ -624,14 +712,37 @@ EEE.Obj = class Obj{
 	constructor(){
 		this.name = "node";
 		this.uid = Math.random()*1000000000000;
+		this.position = new EEE.Vec3(0,0,0);
+		this.rotation = new EEE.Quat();
+		this.scale = new EEE.Vec3(1,1,1);
+		this.localToWorld = new EEE.Mat4().Identity();
+		this.matrixNeedsUpdate = true;
 		this.children = [];
 		this.parent = null;
 		this.modules = [];
 		this.graphics = null;
 	}
 	
+	Update(){
+		for(var i = 0; i < this.modules.length; i++){
+			this.modules[i].update();
+		}
+		this.UpdateMatrix();
+	}
+
+	UpdateMatrix(){
+		if(this.matrixNeedsUpdate){
+			this.localToWorld.TRS( this.position, this.rotation, this.scale );
+			for(var i = 0; i < this.children.length; i++){
+				this.children[i].matrixNeedsUpdate = true;
+			}
+			this.matrixNeedsUpdate = false;
+		}
+	}
+
 	AddModule( module ){
-		var m = new module( this );
+		var m = Object.create(module);
+		m.owner = this;
 		this.modules.push( m );
 		return m;
 	}
@@ -659,10 +770,8 @@ EEE.Camera = class Camera extends EEE.Obj{
 /* src/rendering/Material.js */
 
 EEE.Material = class Material{
-    constructor(){
-        this.passes = [
-            EEE.renderer.programs.default
-        ];
+    constructor( passes ){
+        this.passes = passes;
         this.uniforms = {};
     }
 }
@@ -671,6 +780,7 @@ EEE.Material = class Material{
 
 EEE.WebGLRenderer = class WebGLRenderer{
 	constructor(){
+		this.matrix_model = new EEE.Mat4().Identity(); 
 		this.matrix_view = new EEE.Mat4().Identity();
 		this.matrix_projection = new EEE.Mat4().Identity();
 
@@ -700,12 +810,14 @@ EEE.WebGLRenderer = class WebGLRenderer{
 					"varying vec4 v_color;",
 					"varying vec2 v_uv0;",
 
+					"uniform mat4 u_matrix_model;",
+
 					"void main(){",
 					"	v_vertex = a_vertex;",
 					"	v_normal = a_normal;",
 					"	v_color = a_color;",
 					"	v_uv0 = a_uv0;",
-					"	gl_Position = vec4( a_vertex, 1.0 );",
+					"	gl_Position = u_matrix_model * vec4( a_vertex, 1.0 );",
 					"}"
 				].join("\n"),
 				[
@@ -720,6 +832,12 @@ EEE.WebGLRenderer = class WebGLRenderer{
 				].join("\n")
 			)
 		};
+		this.defaultMaterial = new EEE.Material([
+			{
+				depthTest : true,
+				program : this.programs.default
+			}
+		]);
 	}
 
 	OnResize(){
@@ -744,9 +862,6 @@ EEE.WebGLRenderer = class WebGLRenderer{
 		this.gl.bindAttribLocation(p, 2, "a_color");
 		this.gl.bindAttribLocation(p, 3, "a_uv0");
 		this.gl.linkProgram(p);
-
-		
-
 		return p;
 	}
 
@@ -765,6 +880,7 @@ EEE.WebGLRenderer = class WebGLRenderer{
 			if(o.graphics){
 				switch( o.graphics.type ){
 					case EEE.GRAPHICS_MESH:
+						this.matrix_model = o.localToWorld;
 						this.DrawMesh( o.graphics );
 						break;
 					// todo add more drawing functions for sprites, particles etc
@@ -809,41 +925,45 @@ EEE.WebGLRenderer = class WebGLRenderer{
 			this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, null);
 		}
 
-		// setup shaderprogram
-		if(!material){
-			this.gl.useProgram( this.programs["default"] );
-			this.activeProgram = this.programs["default"];
-		}else{
-			this.gl.useProgram( material.glProgram );
-			this.activeProgram = material.glProgram;
+		// multiple material passes supported
+		// passes are drawn is order
+		var mat = material || this.defaultMaterial;
+		for(var i = 0; i < mat.passes.length; i++){
+			if(mat.passes[i].depthTest == true){
+				this.gl.enable(this.gl.DEPTH_TEST);
+			}
+
+			this.gl.useProgram( mat.passes[i].program );
+			this.activeProgram = mat.passes[i].program;
+
+			var matrixModelLoc = this.gl.getUniformLocation(this.activeProgram, "u_matrix_model");
+			this.gl.uniformMatrix4fv(matrixModelLoc, false, this.matrix_model.data);
+			// else if all attributes are already initialized
+			// bind all attributes and draw triangles
+			
+			this.gl.bindBuffer( this.gl.ARRAY_BUFFER, mesh.gl.attributes.a_vertex );
+			this.gl.enableVertexAttribArray(0);
+			this.gl.vertexAttribPointer( 0, 3, this.gl.FLOAT, false, 0, 0 );
+			
+			this.gl.bindBuffer( this.gl.ARRAY_BUFFER, mesh.gl.attributes.a_normal );
+			this.gl.enableVertexAttribArray(1);
+			this.gl.vertexAttribPointer( 1, 3, this.gl.BYTE, true, 0, 0 );	
+			
+			this.gl.bindBuffer( this.gl.ARRAY_BUFFER, mesh.gl.attributes.a_color );
+			this.gl.enableVertexAttribArray(2);
+			this.gl.vertexAttribPointer( 2, 4, this.gl.UNSIGNED_BYTE, true, 0, 0 );
+			
+			this.gl.bindBuffer( this.gl.ARRAY_BUFFER, mesh.gl.attributes.a_uv0 );
+			this.gl.enableVertexAttribArray(3);
+			this.gl.vertexAttribPointer( 3, 2, this.gl.FLOAT, false, 0, 0 );
+			
+			
+			this.gl.bindBuffer( this.gl.ELEMENT_ARRAY_BUFFER, mesh.gl.indices );
+			this.gl.drawElements( this.gl.TRIANGLES, mesh.indices.length, this.gl.UNSIGNED_SHORT, 0);
+
+			this.gl.bindBuffer( this.gl.ELEMENT_ARRAY_BUFFER, null );
+			this.gl.bindBuffer( this.gl.ARRAY_BUFFER, null );
 		}
-
-
-		// else if all attributes are already initialized
-		// bind all attributes and draw triangles
-		
-		this.gl.bindBuffer( this.gl.ARRAY_BUFFER, mesh.gl.attributes.a_vertex );
-		this.gl.enableVertexAttribArray(0);
-		this.gl.vertexAttribPointer( 0, 3, this.gl.FLOAT, false, 0, 0 );
-		
-		this.gl.bindBuffer( this.gl.ARRAY_BUFFER, mesh.gl.attributes.a_normal );
-		this.gl.enableVertexAttribArray(1);
-		this.gl.vertexAttribPointer( 1, 3, this.gl.BYTE, true, 0, 0 );	
-		
-		this.gl.bindBuffer( this.gl.ARRAY_BUFFER, mesh.gl.attributes.a_color );
-		this.gl.enableVertexAttribArray(2);
-		this.gl.vertexAttribPointer( 2, 4, this.gl.UNSIGNED_BYTE, true, 0, 0 );
-		
-		this.gl.bindBuffer( this.gl.ARRAY_BUFFER, mesh.gl.attributes.a_uv0 );
-		this.gl.enableVertexAttribArray(3);
-		this.gl.vertexAttribPointer( 3, 2, this.gl.FLOAT, false, 0, 0 );
-		
-		
-		this.gl.bindBuffer( this.gl.ELEMENT_ARRAY_BUFFER, mesh.gl.indices );
-		this.gl.drawElements( this.gl.TRIANGLES, mesh.indices.length, this.gl.UNSIGNED_SHORT, 0);
-
-		this.gl.bindBuffer( this.gl.ELEMENT_ARRAY_BUFFER, null );
-		this.gl.bindBuffer( this.gl.ARRAY_BUFFER, null );
 	}
 };
 
@@ -854,7 +974,7 @@ EEE.WebGL2Renderer = class WebGL2Renderer{
 
 		this.matrix_projection = new EEE.Mat4();
 		this.matrix_view = new EEE.Mat4();
-
+		
 		this.canvas = document.createElement("canvas");
 		this.gl = this.canvas.getContext("webgl");
 		if(!this.gl){ console.log("No WebGL2 Support!"); return; }

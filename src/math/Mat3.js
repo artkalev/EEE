@@ -54,4 +54,13 @@ EEE.Mat3 = class Mat3{
     MultiplyVec3( other ){
 
     }
+
+    GetMat4(){
+        var m = new EEE.Mat4();
+        m.data[0] = this.data[0];   m.data[4] = this.data[4];   m.data[8]  = this.data[8];     m.data[12] = 0;
+        m.data[1] = this.data[1];   m.data[5] = this.data[5];   m.data[9]  = this.data[9];     m.data[13] = 0;
+        m.data[2] = this.data[2];   m.data[6] = this.data[6];   m.data[10] = this.data[10];    m.data[14] = 0;
+        m.data[3] = 0;              m.data[7] = 0;              m.data[11] = 0;                m.data[15] = 1;
+        return m;
+    }
 }

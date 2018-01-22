@@ -10,5 +10,11 @@ EEE.Scene = class Scene{
     AddObj( o ){
         this.objects.push(o);
     }
+
+    Update(){
+        for(var i = 0 ; i < this.objects.length; i++){
+            this.objects[i].Update();
+        }
+    }
     
 };
