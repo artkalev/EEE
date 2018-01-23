@@ -17,6 +17,7 @@ EEE.GRAPHICS_SPRITE = 0x000011;
 
 // global variables
 EEE.time = Date.now() / 1000;
+EEE.deltaTime = 0;
 
 // assets object
 EEE.ASSETS = {

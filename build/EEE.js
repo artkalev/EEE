@@ -21,6 +21,7 @@ EEE.GRAPHICS_SPRITE = 0x000011;
 
 // global variables
 EEE.time = Date.now() / 1000;
+EEE.deltaTime = 0;
 
 // assets object
 EEE.ASSETS = {
@@ -109,12 +110,26 @@ EEE.Vec3 = class Vec3{
 	get y(){ return this.data[1]; } set y(v){ this.data[1] = v; }
 	get z(){ return this.data[2]; } set z(v){ this.data[2] = v; }
 
+	Set(x,y,z){
+		this.data[0] = x;
+		this.data[1] = y;
+		this.data[2] = z;
+		return this;
+	}
+
 	LengthSqr(){
 		return this.data[0]*this.data[0] + this.data[1]*this.data[1] + this.data[2]*this.data[2];
 	}
 	
 	Length(){
 		return Math.sqrt( this.LengthSqr() );
+	}
+
+	Normalize(){
+		if(!this.IsZero){
+			this.DivideScalar(this.Length);
+		}
+		return this;
 	}
 
 	// vec3 - vec3 operations
@@ -307,12 +322,12 @@ EEE.Quat = class Quat{
     }
 
     SetEuler(x,y,z){
-        c1 = Math.cos(x);
-        c2 = Math.cos(y);
-        c3 = Math.cos(z);
-        s1 = Math.sin(x);
-        s2 = Math.sin(y);
-        s3 = Math.sin(z);
+        var c1 = Math.cos(y);
+        var c2 = Math.cos(x);
+        var c3 = Math.cos(z);
+        var s1 = Math.sin(y);
+        var s2 = Math.sin(x);
+        var s3 = Math.sin(z);
 
         this.data[3] = c1*c2*c3 - s1*s2*s3;
         this.data[0] = s1*s2*c3 + c1*c1*s3;
@@ -466,6 +481,7 @@ EEE.Mat3 = class Mat3{
             this.m20 * other.m02 + this.m21 * other.m12 + this.m22 * other.m22
         ];
         this.data.set(t);
+        return this;
     }
 
     MultiplyVec2( other ){
@@ -478,9 +494,9 @@ EEE.Mat3 = class Mat3{
 
     GetMat4(){
         var m = new EEE.Mat4();
-        m.data[0] = this.data[0];   m.data[4] = this.data[4];   m.data[8]  = this.data[8];     m.data[12] = 0;
-        m.data[1] = this.data[1];   m.data[5] = this.data[5];   m.data[9]  = this.data[9];     m.data[13] = 0;
-        m.data[2] = this.data[2];   m.data[6] = this.data[6];   m.data[10] = this.data[10];    m.data[14] = 0;
+        m.data[0] = this.data[0];   m.data[4] = this.data[3];   m.data[8]  = this.data[6];     m.data[12] = 0;
+        m.data[1] = this.data[1];   m.data[5] = this.data[4];   m.data[9]  = this.data[7];     m.data[13] = 0;
+        m.data[2] = this.data[2];   m.data[6] = this.data[5];   m.data[10] = this.data[8];     m.data[14] = 0;
         m.data[3] = 0;              m.data[7] = 0;              m.data[11] = 0;                m.data[15] = 1;
         return m;
     }
@@ -573,12 +589,23 @@ EEE.Mat4 = class Mat4{
             0,0,0,1
         ]);
 
-        this.Multiply(T);
+        this.Multiply(S).Multiply(R).Multiply(T);
         return this;
     }
 
     PerspectiveProjection( fov, aspect, near, far ){
-        // todo
+        var s = 1 / Math.tan( (fov/2) * (Math.PI/180) );
+        this.data.set([
+            s,0,0,0,
+            0,s,0,0,
+            0,0,-(far/(far-near)), -1,
+            0,0,-((far*near)/(far-near)), 0
+        ]);
+        return this;
+    }
+
+    Copy( other ){
+        this.data.set(other.data);
         return this;
     }
 };
@@ -633,7 +660,7 @@ EEE.ASSETS.meshes["cube"] = new EEE.Mesh(
         -0.5,-0.5,-0.5, -0.5, 0.5,-0.5,  0.5, 0.5,-0.5,  // z-
         -0.5,-0.5,-0.5,  0.5, 0.5,-0.5,  0.5,-0.5,-0.5,  // z-
          0.5,-0.5, 0.5, -0.5, 0.5, 0.5, -0.5,-0.5, 0.5,  // z+
-         0.5,-0.5, 0.5,  0.5, 0.5, 0.5, -0.5,-0.5, 0.5   // z+
+         0.5,-0.5, 0.5,  0.5, 0.5, 0.5, -0.5, 0.5, 0.5   // z+
     ],
     [ 
          0, 0,-1,   0, 0,-1,   0, 0,-1,   0, 0,-1,   0, 0,-1,   0, 0,-1, // z-
@@ -643,7 +670,7 @@ EEE.ASSETS.meshes["cube"] = new EEE.Mesh(
           0,  0,  0,255,      0,255,  0,255,    255,255,  0,255, // z-
           0,  0,  0,255,    255,255,  0,255,    255,  0,  0,255, // z-
         255,  0,255,255,      0,255,255,255,      0,  0,255,255, // z+
-        255,  0,255,255,    255,255,255,255,      0,  0,255,255  // z+
+        255,  0,255,255,    255,255,255,255,      0,255,255,255  // z+
     ],
     [ 
         0.0, 0.0,  0.0, 1.0,  1.0, 1.0, // z-
@@ -662,6 +689,7 @@ EEE.ASSETS.meshes["cube"] = new EEE.Mesh(
 EEE.Init = function(){
     console.log("Started 'EEE' Initialization");
     EEE.loader = new EEE.Loader();
+    EEE.input = new EEE.Input();
     EEE.renderer = new EEE.WebGLRenderer();
     EEE.scene = new EEE.Scene();
     console.log("'EEE' Initialization Completed!");
@@ -677,11 +705,45 @@ EEE.Init = function(){
 /* src/core/Update.js */
 
 EEE.Update = function(){
+    EEE.deltaTime = Date.now()/1000 - EEE.time;
     EEE.time = Date.now() / 1000;
     EEE.scene.Update();
     EEE.renderer.Render( EEE.scene, EEE.scene.activeCamera );   
     requestAnimationFrame( EEE.Update );    
 }
+
+/* src/core/Input.js */
+
+EEE.Input = class Input{
+    constructor(){
+        this.bindings = {
+            up:[87,38],
+            down:[83,40],
+            left:[65,37],
+            right:[68,39]
+        };
+        this.keys = {};
+        var self = this;
+        window.addEventListener("keydown", function( e ){
+            self.keys[ e.keyCode ] = true;
+        });
+        window.addEventListener("keyup", function( e ){
+            self.keys[ e.keyCode ] = false;
+        });
+    }
+
+    GetBindingState( bindingName ){
+        var b = this.bindings[bindingName];
+        if(b != undefined){
+            for(var i = 0; i < b.length; i++){
+                if( this.keys[b[i]] ){
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+};
 
 /* src/core/Scene.js */
 
@@ -727,16 +789,16 @@ EEE.Obj = class Obj{
 		for(var i = 0; i < this.modules.length; i++){
 			this.modules[i].update();
 		}
-		this.UpdateMatrix();
+		if(this.matrixNeedsUpdate){
+			this.UpdateMatrix();
+			this.matrixNeedsUpdate = false;
+		}
 	}
 
 	UpdateMatrix(){
-		if(this.matrixNeedsUpdate){
-			this.localToWorld.TRS( this.position, this.rotation, this.scale );
-			for(var i = 0; i < this.children.length; i++){
-				this.children[i].matrixNeedsUpdate = true;
-			}
-			this.matrixNeedsUpdate = false;
+		this.localToWorld.TRS( this.position, this.rotation, this.scale );
+		for(var i = 0; i < this.children.length; i++){
+			this.children[i].matrixNeedsUpdate = true;
 		}
 	}
 
@@ -764,6 +826,12 @@ EEE.Camera = class Camera extends EEE.Obj{
             this.far
         );
         this.matrix_view = new EEE.Mat4().Identity();
+    }
+
+    UpdateMatrix(){
+        super.UpdateMatrix();
+        this.matrix_view.Copy( this.localToWorld );
+        //this.matrix_view.data[10] *= -1;
     }
 }
 
@@ -811,13 +879,16 @@ EEE.WebGLRenderer = class WebGLRenderer{
 					"varying vec2 v_uv0;",
 
 					"uniform mat4 u_matrix_model;",
+					"uniform mat4 u_matrix_view;",
+					"uniform mat4 u_matrix_projection;",
 
 					"void main(){",
 					"	v_vertex = a_vertex;",
 					"	v_normal = a_normal;",
 					"	v_color = a_color;",
 					"	v_uv0 = a_uv0;",
-					"	gl_Position = u_matrix_model * vec4( a_vertex, 1.0 );",
+					"	gl_Position = u_matrix_projection * u_matrix_view * u_matrix_model * vec4( a_vertex, 1.0 );",
+					"	gl_PointSize = 10.0;",
 					"}"
 				].join("\n"),
 				[
@@ -833,10 +904,16 @@ EEE.WebGLRenderer = class WebGLRenderer{
 			)
 		};
 		this.defaultMaterial = new EEE.Material([
-			{
+			this.CreateMaterialPass({
+				program:this.programs.default,
 				depthTest : true,
-				program : this.programs.default
-			}
+				drawMode : 1
+			}),
+			this.CreateMaterialPass({
+				program : this.programs.default,
+				drawMode : 0,
+				depthTest : true
+			})
 		]);
 	}
 
@@ -865,7 +942,19 @@ EEE.WebGLRenderer = class WebGLRenderer{
 		return p;
 	}
 
+	CreateMaterialPass(p){
+		return {
+			program:p.program,
+			depthTest:p.depthTest, // wether to gl.enable(gl.DEPTH_TEST)
+			drawMode:p.drawMode, // 0:points, 1:edges, 2:triangles
+		};
+	}
+
 	Render( scene, camera ){
+
+		this.matrix_view.Copy( camera.matrix_view );
+		this.matrix_projection.Copy( camera.matrix_projection );
+
 		this.gl.clearColor( 
 			scene.backgroundColor.r,
 			scene.backgroundColor.g,
@@ -889,7 +978,7 @@ EEE.WebGLRenderer = class WebGLRenderer{
 		}
 	}
 
-	DrawMesh( mesh, material, modelMatrix){
+	DrawMesh( mesh, material){
 		// if mesh does not have gl properties they must be created
 		// gl attribute and index buffers will be added to mesh object
 		// this can be a bit expensive bt it will only affect first frame the mesh is drawn on.
@@ -937,7 +1026,11 @@ EEE.WebGLRenderer = class WebGLRenderer{
 			this.activeProgram = mat.passes[i].program;
 
 			var matrixModelLoc = this.gl.getUniformLocation(this.activeProgram, "u_matrix_model");
+			var matrixViewLoc = this.gl.getUniformLocation(this.activeProgram, "u_matrix_view");
+			var matrixProjLoc = this.gl.getUniformLocation(this.activeProgram, "u_matrix_projection");
 			this.gl.uniformMatrix4fv(matrixModelLoc, false, this.matrix_model.data);
+			this.gl.uniformMatrix4fv(matrixViewLoc, false, this.matrix_view.data);
+			this.gl.uniformMatrix4fv(matrixProjLoc, false, this.matrix_projection.data);
 			// else if all attributes are already initialized
 			// bind all attributes and draw triangles
 			
@@ -959,7 +1052,18 @@ EEE.WebGLRenderer = class WebGLRenderer{
 			
 			
 			this.gl.bindBuffer( this.gl.ELEMENT_ARRAY_BUFFER, mesh.gl.indices );
-			this.gl.drawElements( this.gl.TRIANGLES, mesh.indices.length, this.gl.UNSIGNED_SHORT, 0);
+			switch(mat.passes[i].drawMode){
+				case 0:
+					this.gl.drawElements( this.gl.POINTS, mesh.indices.length, this.gl.UNSIGNED_SHORT, 0);
+					break;
+				case 1:
+					this.gl.drawElements( this.gl.LINE_LOOP, mesh.indices.length, this.gl.UNSIGNED_SHORT, 0);
+					break;
+				case 2:
+					this.gl.drawElements( this.gl.TRIANGLES, mesh.indices.length, this.gl.UNSIGNED_SHORT, 0);
+					break;
+			}
+			
 
 			this.gl.bindBuffer( this.gl.ELEMENT_ARRAY_BUFFER, null );
 			this.gl.bindBuffer( this.gl.ARRAY_BUFFER, null );

@@ -39,12 +39,12 @@ EEE.Quat = class Quat{
     }
 
     SetEuler(x,y,z){
-        c1 = Math.cos(x);
-        c2 = Math.cos(y);
-        c3 = Math.cos(z);
-        s1 = Math.sin(x);
-        s2 = Math.sin(y);
-        s3 = Math.sin(z);
+        var c1 = Math.cos(y);
+        var c2 = Math.cos(x);
+        var c3 = Math.cos(z);
+        var s1 = Math.sin(y);
+        var s2 = Math.sin(x);
+        var s3 = Math.sin(z);
 
         this.data[3] = c1*c2*c3 - s1*s2*s3;
         this.data[0] = s1*s2*c3 + c1*c1*s3;

@@ -31,13 +31,16 @@ EEE.WebGLRenderer = class WebGLRenderer{
 					"varying vec2 v_uv0;",
 
 					"uniform mat4 u_matrix_model;",
+					"uniform mat4 u_matrix_view;",
+					"uniform mat4 u_matrix_projection;",
 
 					"void main(){",
 					"	v_vertex = a_vertex;",
 					"	v_normal = a_normal;",
 					"	v_color = a_color;",
 					"	v_uv0 = a_uv0;",
-					"	gl_Position = u_matrix_model * vec4( a_vertex, 1.0 );",
+					"	gl_Position = u_matrix_projection * u_matrix_view * u_matrix_model * vec4( a_vertex, 1.0 );",
+					"	gl_PointSize = 10.0;",
 					"}"
 				].join("\n"),
 				[
@@ -53,10 +56,16 @@ EEE.WebGLRenderer = class WebGLRenderer{
 			)
 		};
 		this.defaultMaterial = new EEE.Material([
-			{
+			this.CreateMaterialPass({
+				program:this.programs.default,
 				depthTest : true,
-				program : this.programs.default
-			}
+				drawMode : 1 // gl.LINES
+			}),
+			this.CreateMaterialPass({
+				program : this.programs.default,
+				drawMode : 0, // gl.POINTS
+				depthTest : true
+			})
 		]);
 	}
 
@@ -85,7 +94,19 @@ EEE.WebGLRenderer = class WebGLRenderer{
 		return p;
 	}
 
+	CreateMaterialPass(p){
+		return {
+			program:p.program,
+			depthTest:p.depthTest, // wether to gl.enable(gl.DEPTH_TEST)
+			drawMode:p.drawMode, // 0:points, 1:edges, 2:triangles
+		};
+	}
+
 	Render( scene, camera ){
+
+		this.matrix_view.Copy( camera.matrix_view );
+		this.matrix_projection.Copy( camera.matrix_projection );
+
 		this.gl.clearColor( 
 			scene.backgroundColor.r,
 			scene.backgroundColor.g,
@@ -109,7 +130,7 @@ EEE.WebGLRenderer = class WebGLRenderer{
 		}
 	}
 
-	DrawMesh( mesh, material, modelMatrix){
+	DrawMesh( mesh, material){
 		// if mesh does not have gl properties they must be created
 		// gl attribute and index buffers will be added to mesh object
 		// this can be a bit expensive bt it will only affect first frame the mesh is drawn on.
@@ -157,7 +178,11 @@ EEE.WebGLRenderer = class WebGLRenderer{
 			this.activeProgram = mat.passes[i].program;
 
 			var matrixModelLoc = this.gl.getUniformLocation(this.activeProgram, "u_matrix_model");
+			var matrixViewLoc = this.gl.getUniformLocation(this.activeProgram, "u_matrix_view");
+			var matrixProjLoc = this.gl.getUniformLocation(this.activeProgram, "u_matrix_projection");
 			this.gl.uniformMatrix4fv(matrixModelLoc, false, this.matrix_model.data);
+			this.gl.uniformMatrix4fv(matrixViewLoc, false, this.matrix_view.data);
+			this.gl.uniformMatrix4fv(matrixProjLoc, false, this.matrix_projection.data);
 			// else if all attributes are already initialized
 			// bind all attributes and draw triangles
 			
@@ -179,7 +204,18 @@ EEE.WebGLRenderer = class WebGLRenderer{
 			
 			
 			this.gl.bindBuffer( this.gl.ELEMENT_ARRAY_BUFFER, mesh.gl.indices );
-			this.gl.drawElements( this.gl.TRIANGLES, mesh.indices.length, this.gl.UNSIGNED_SHORT, 0);
+			switch(mat.passes[i].drawMode){
+				case 0:
+					this.gl.drawElements( this.gl.POINTS, mesh.indices.length, this.gl.UNSIGNED_SHORT, 0);
+					break;
+				case 1:
+					this.gl.drawElements( this.gl.LINES, mesh.indices.length, this.gl.UNSIGNED_SHORT, 0);
+					break;
+				case 2:
+					this.gl.drawElements( this.gl.TRIANGLES, mesh.indices.length, this.gl.UNSIGNED_SHORT, 0);
+					break;
+			}
+			
 
 			this.gl.bindBuffer( this.gl.ELEMENT_ARRAY_BUFFER, null );
 			this.gl.bindBuffer( this.gl.ARRAY_BUFFER, null );

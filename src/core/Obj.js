@@ -17,16 +17,16 @@ EEE.Obj = class Obj{
 		for(var i = 0; i < this.modules.length; i++){
 			this.modules[i].update();
 		}
-		this.UpdateMatrix();
+		if(this.matrixNeedsUpdate){
+			this.UpdateMatrix();
+			this.matrixNeedsUpdate = false;
+		}
 	}
 
 	UpdateMatrix(){
-		if(this.matrixNeedsUpdate){
-			this.localToWorld.TRS( this.position, this.rotation, this.scale );
-			for(var i = 0; i < this.children.length; i++){
-				this.children[i].matrixNeedsUpdate = true;
-			}
-			this.matrixNeedsUpdate = false;
+		this.localToWorld.TRS( this.position, this.rotation, this.scale );
+		for(var i = 0; i < this.children.length; i++){
+			this.children[i].matrixNeedsUpdate = true;
 		}
 	}
 

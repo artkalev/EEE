@@ -7,12 +7,26 @@ EEE.Vec3 = class Vec3{
 	get y(){ return this.data[1]; } set y(v){ this.data[1] = v; }
 	get z(){ return this.data[2]; } set z(v){ this.data[2] = v; }
 
+	Set(x,y,z){
+		this.data[0] = x;
+		this.data[1] = y;
+		this.data[2] = z;
+		return this;
+	}
+
 	LengthSqr(){
 		return this.data[0]*this.data[0] + this.data[1]*this.data[1] + this.data[2]*this.data[2];
 	}
 	
 	Length(){
 		return Math.sqrt( this.LengthSqr() );
+	}
+
+	Normalize(){
+		if(!this.IsZero){
+			this.DivideScalar(this.Length);
+		}
+		return this;
 	}
 
 	// vec3 - vec3 operations

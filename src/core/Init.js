@@ -1,6 +1,7 @@
 EEE.Init = function(){
     console.log("Started 'EEE' Initialization");
     EEE.loader = new EEE.Loader();
+    EEE.input = new EEE.Input();
     EEE.renderer = new EEE.WebGLRenderer();
     EEE.scene = new EEE.Scene();
     console.log("'EEE' Initialization Completed!");

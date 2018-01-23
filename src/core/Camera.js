@@ -13,4 +13,10 @@ EEE.Camera = class Camera extends EEE.Obj{
         );
         this.matrix_view = new EEE.Mat4().Identity();
     }
+
+    UpdateMatrix(){
+        super.UpdateMatrix();
+        this.matrix_view.Copy( this.localToWorld );
+        //this.matrix_view.data[10] *= -1;
+    }
 }

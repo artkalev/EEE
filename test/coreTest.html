@@ -8,14 +8,34 @@
     <body>
         <script>
             EEE.Init();
+
             var testObj = new EEE.Obj();
             testObj.graphics = EEE.ASSETS.meshes["cube"];  
             EEE.scene.AddObj(testObj);
-
+            
             testObj.AddModule({
                 firstframe : function(){},
                 update : function(){
-                    this.owner.position.x = Math.sin(EEE.time);
+                    this.owner.rotation.SetEuler(0,EEE.time,0);
+                    this.owner.matrixNeedsUpdate = true;
+                }
+            });
+            
+            EEE.scene.activeCamera.position.z = -10;
+            EEE.scene.activeCamera.UpdateMatrix();
+            EEE.scene.activeCamera.AddModule({
+                dir : new EEE.Vec3(),
+                update : function(){
+                    this.dir.Set( 0,0,0 );
+                    if(EEE.input.GetBindingState("up")){
+                        this.dir.z += 1;
+                    }
+                    if(EEE.input.GetBindingState("down")){
+                        this.dir.z -= 1;
+                    }
+                    this.dir.Normalize();
+                    this.dir.MultiplyScalar(EEE.deltaTime);
+                    this.owner.position.Add(this.dir);
                     this.owner.matrixNeedsUpdate = true;
                 }
             });

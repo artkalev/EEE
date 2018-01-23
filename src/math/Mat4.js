@@ -83,12 +83,23 @@ EEE.Mat4 = class Mat4{
             0,0,0,1
         ]);
 
-        this.Multiply(T);
+        this.Multiply(S).Multiply(R).Multiply(T);
         return this;
     }
 
     PerspectiveProjection( fov, aspect, near, far ){
-        // todo
+        var s = 1 / Math.tan( (fov/2) * (Math.PI/180) );
+        this.data.set([
+            s,0,0,0,
+            0,s,0,0,
+            0,0,-(far/(far-near)), -1,
+            0,0,-((far*near)/(far-near)), 0
+        ]);
+        return this;
+    }
+
+    Copy( other ){
+        this.data.set(other.data);
         return this;
     }
 };

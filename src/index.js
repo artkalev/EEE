@@ -12,6 +12,7 @@
 
 #include core/Init.js
 #include core/Update.js
+#include core/Input.js
 #include core/Scene.js
 #include core/Obj.js
 #include core/Camera.js
