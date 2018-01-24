@@ -596,7 +596,7 @@ EEE.Mat4 = class Mat4{
     PerspectiveProjection( fov, aspect, near, far ){
         var s = 1 / Math.tan( (fov/2) * (Math.PI/180) );
         this.data.set([
-            s,0,0,0,
+            s / aspect,0,0,0,
             0,s,0,0,
             0,0,-(far/(far-near)), -1,
             0,0,-((far*near)/(far-near)), 0
@@ -624,6 +624,9 @@ EEE.Color = class Color{
 
 /* src/graphics/Mesh.js */
 
+/*
+    triangle winding is counter-clockwise!
+*/
 EEE.Mesh = class Mesh{
     constructor( name, vertices, normals, colors, uvs, indices ){
         this.type = EEE.GRAPHICS_MESH;
@@ -639,7 +642,7 @@ EEE.Mesh = class Mesh{
 EEE.ASSETS.meshes["triangle"] = new EEE.Mesh(
     "triangle",
     [ -0.5,-0.5, 0.0,     0.0, 0.5, 0.0,     0.5,-0.5, 0.0,  ],
-    [ 0,0,128, 0,0,128, 0,0,128 ],
+    [ 0,0,127, 0,0,127, 0,0,127 ],
     [ 255,0,0,255,  0,255,0,255,  0,0,255,255 ],
     [ 0.0,0.0,  0.5,1.0,  1.0,0.0 ],
     [ 0,1,2 ]
@@ -648,7 +651,7 @@ EEE.ASSETS.meshes["triangle"] = new EEE.Mesh(
 EEE.ASSETS.meshes["quad"] = new EEE.Mesh(
     "quad",
     [ -0.5,-0.5, 0.0,    -0.5, 0.5, 0.0,    0.5, 0.5, 0.0,    0.5, -0.5, 0.0  ],
-    [ 0,0,1, 0,0,1, 0,0,1, 0,0,1 ],
+    [ 0,0,127, 0,0,127, 0,0,127, 0,0,127 ],
     [ 0,0,0,255,   0,255,0,255,  0,0,255,255,   255,0,0,255  ],
     [ 0.0,0.0,  0.0,1.0,  1.0,1.0,  1.0,0.0 ],
     [ 0,1,2, 0,2,3 ]
@@ -657,30 +660,70 @@ EEE.ASSETS.meshes["quad"] = new EEE.Mesh(
 EEE.ASSETS.meshes["cube"] = new EEE.Mesh(
     "cube",
     [ 
-        -0.5,-0.5,-0.5, -0.5, 0.5,-0.5,  0.5, 0.5,-0.5,  // z-
-        -0.5,-0.5,-0.5,  0.5, 0.5,-0.5,  0.5,-0.5,-0.5,  // z-
-         0.5,-0.5, 0.5, -0.5, 0.5, 0.5, -0.5,-0.5, 0.5,  // z+
-         0.5,-0.5, 0.5,  0.5, 0.5, 0.5, -0.5, 0.5, 0.5   // z+
+         -0.5,  0.5, -0.5,    -0.5, -0.5, -0.5,     0.5,  0.5, -0.5,  // z-
+          0.5,  0.5, -0.5,    -0.5, -0.5, -0.5,     0.5, -0.5, -0.5,  // z-
+         -0.5,  0.5,  0.5,     0.5, -0.5,  0.5,    -0.5, -0.5,  0.5,  // z+
+          0.5,  0.5,  0.5,     0.5, -0.5,  0.5,    -0.5,  0.5,  0.5,  // z+
+
+         -0.5, -0.5, -0.5,    -0.5, -0.5,  0.5,     0.5, -0.5,  0.5,  // y-
+         -0.5, -0.5, -0.5,     0.5, -0.5,  0.5,     0.5, -0.5, -0.5,  // y-
+         -0.5,  0.5, -0.5,     0.5,  0.5,  0.5,    -0.5,  0.5,  0.5,  // y+
+         -0.5,  0.5, -0.5,     0.5,  0.5, -0.5,     0.5,  0.5,  0.5,  // y+
+
+         -0.5, -0.5, -0.5,    -0.5,  0.5, -0.5,    -0.5,  0.5,  0.5,  // x-
+         -0.5, -0.5, -0.5,    -0.5,  0.5,  0.5,    -0.5, -0.5,  0.5,  // x-
+          0.5, -0.5, -0.5,     0.5, -0.5,  0.5,     0.5,  0.5,  0.5,  // x+
+          0.5, -0.5, -0.5,     0.5,  0.5,  0.5,     0.5,  0.5, -0.5   // x+
     ],
     [ 
-         0, 0,-1,   0, 0,-1,   0, 0,-1,   0, 0,-1,   0, 0,-1,   0, 0,-1, // z-
-         0, 0, 1,   0, 0, 1,   0, 0, 1,   0, 0, 1,   0, 0, 1,   0, 0, 1  // z+
+         0, 0,-128,   0, 0,-128,   0, 0,-128,   0, 0,-128,   0, 0,-128,   0, 0,-128,  // z-
+         0, 0, 127,   0, 0, 127,   0, 0, 127,   0, 0, 127,   0, 0, 127,   0, 0, 127,  // z+
+
+         0,-128, 0,   0,-128, 0,   0,-128, 0,   0,-128, 0,   0,-128, 0,   0,-128, 0,  // y-
+         0, 127, 0,   0, 127, 0,   0, 127, 0,   0, 127, 0,   0, 127, 0,   0, 127, 0,  // y+
+
+        -128, 0, 0,  -128, 0, 0,  -128, 0, 0,  -128, 0, 0,  -128, 0, 0,  -128, 0, 0,  // x-
+         127, 0, 0,   127, 0, 0,   127, 0, 0,   127, 0, 0,   127, 0, 0,   127, 0, 0   // x+
     ],
     [ 
-          0,  0,  0,255,      0,255,  0,255,    255,255,  0,255, // z-
-          0,  0,  0,255,    255,255,  0,255,    255,  0,  0,255, // z-
-        255,  0,255,255,      0,255,255,255,      0,  0,255,255, // z+
-        255,  0,255,255,    255,255,255,255,      0,255,255,255  // z+
+          0,255,  0,255,    0,  0,  0,255,    255,255,  0,255, // z-
+        255,255,  0,255,    0,  0,  0,255,    255,  0,  0,255, // z-
+          0,255,255,255,  255,  0,255,255,      0,  0,255,255, // z+
+        255,255,255,255,  255,  0,255,255,      0,255,255,255, // z+
+
+          0,  0,  0,255,    0,  0,255,255,    255,  0,255,255, // y-
+          0,  0,  0,255,  255,  0,255,255,    255,  0,  0,255, // y-
+          0,255,  0,255,  255,255,255,255,      0,255,255,255, // y+
+          0,255,  0,255,  255,255,  0,255,    255,255,255,255, // y+
+
+          0,  0,  0,255,    0,255,  0,255,      0,255,255,255, // x-
+          0,  0,  0,255,    0,255,255,255,      0,  0,255,255, // x-
+        255,  0,  0,255,  255,  0,255,255,    255,255,255,255, // x+
+        255,  0,  0,255,  255,255,255,255,    255,255,  0,255  // x+
     ],
     [ 
-        0.0, 0.0,  0.0, 1.0,  1.0, 1.0, // z-
-        0.0, 0.0,  1.0, 1.0,  1.0, 0.0, // z-
-        0.0, 0.0,  1.0, 1.0,  1.0, 0.0, // z+
-        0.0, 0.0,  0.0, 1.0,  1.0, 0.0  // z+
+        1.0, 1.0,  1.0, 0.0,  0.0, 1.0, // z-
+        0.0, 1.0,  1.0, 0.0,  0.0, 0.0, // z-
+        0.0, 1.0,  1.0, 0.0,  0.0, 0.0, // z+
+        1.0, 1.0,  1.0, 0.0,  0.0, 1.0, // z+
+
+        0.0, 0.0,  0.0, 1.0,  1.0, 1.0, // y-
+        0.0, 0.0,  1.0, 1.0,  1.0, 0.0, // y-
+        0.0, 0.0,  1.0, 1.0,  0.0, 1.0, // y+
+        0.0, 0.0,  1.0, 0.0,  1.0, 1.0, // y+
+
+        0.0, 0.0,  0.0, 1.0,  1.0, 1.0, // x-
+        0.0, 0.0,  1.0, 1.0,  1.0, 0.0, // x-
+        1.0, 0.0,  0.0, 0.0,  0.0, 1.0, // x+
+        1.0, 0.0,  0.0, 1.0,  1.0, 1.0  // x+
     ],
     [ 
-         0, 1, 2,  3, 4, 5,
-         6, 7, 8,  9,10,11
+         0, 1, 2,  3, 4, 5, // z-
+         6, 7, 8,  9,10,11, // z+
+        12,13,14, 15,16,17, // y-
+        18,19,20, 21,22,23, // y+
+        24,25,26, 27,28,29, // x-
+        30,31,32, 33,34,35  // x+
     ]
 );
 
@@ -720,7 +763,9 @@ EEE.Input = class Input{
             up:[87,38],
             down:[83,40],
             left:[65,37],
-            right:[68,39]
+            right:[68,39],
+            jump:[32],
+            crouch:[16]
         };
         this.keys = {};
         var self = this;
@@ -815,6 +860,8 @@ EEE.Obj = class Obj{
 EEE.Camera = class Camera extends EEE.Obj{
     constructor(){
         super();
+        this.width = 0;
+        this.height = 0;
         this.fov = 90;
         this.near = 0.1;
         this.far = 100.0;
@@ -828,10 +875,23 @@ EEE.Camera = class Camera extends EEE.Obj{
         this.matrix_view = new EEE.Mat4().Identity();
     }
 
+    UpdateProjectionMatrix(){
+        this.aspect = this.width / this.height;
+        this.matrix_projection.PerspectiveProjection(
+            this.fov,
+            this.aspect,
+            this.near,
+            this.far
+        );
+    }
+
     UpdateMatrix(){
         super.UpdateMatrix();
         this.matrix_view.Copy( this.localToWorld );
-        //this.matrix_view.data[10] *= -1;
+        this.matrix_view.data[ 2] *= -1;
+        this.matrix_view.data[ 6] *= -1;
+        this.matrix_view.data[10] *= -1;
+        this.matrix_view.data[13] *= -1;
     }
 }
 
@@ -859,7 +919,7 @@ EEE.WebGLRenderer = class WebGLRenderer{
 		this.canvas.style.height = "100%";
 		this.canvas.style.left = "0";
 		this.canvas.style.top = "0";
-		this.gl = this.canvas.getContext("webgl");
+		this.gl = this.canvas.getContext("webgl", {antialias:0});
 		if(!this.gl){ console.log("No WebGL Support!"); return; }
 		document.body.appendChild( this.canvas );
 
@@ -884,7 +944,7 @@ EEE.WebGLRenderer = class WebGLRenderer{
 
 					"void main(){",
 					"	v_vertex = a_vertex;",
-					"	v_normal = a_normal;",
+					"	v_normal = normalize(a_normal);",
 					"	v_color = a_color;",
 					"	v_uv0 = a_uv0;",
 					"	gl_Position = u_matrix_projection * u_matrix_view * u_matrix_model * vec4( a_vertex, 1.0 );",
@@ -898,21 +958,19 @@ EEE.WebGLRenderer = class WebGLRenderer{
 					"varying vec4 v_color;",
 					"varying vec2 v_uv0;",
 					"void main(){",
-					"	gl_FragColor = v_color;",
+					"	gl_FragColor = vec4(vec3(v_uv0, 0.0),1.0);",
 					"}"
 				].join("\n")
 			)
 		};
 		this.defaultMaterial = new EEE.Material([
 			this.CreateMaterialPass({
-				program:this.programs.default,
-				depthTest : true,
-				drawMode : 1
+				program:this.programs.default
 			}),
 			this.CreateMaterialPass({
 				program : this.programs.default,
-				drawMode : 0,
-				depthTest : true
+
+				drawMode : 0, // gl.POINTS
 			})
 		]);
 	}
@@ -943,17 +1001,32 @@ EEE.WebGLRenderer = class WebGLRenderer{
 	}
 
 	CreateMaterialPass(p){
-		return {
-			program:p.program,
-			depthTest:p.depthTest, // wether to gl.enable(gl.DEPTH_TEST)
-			drawMode:p.drawMode, // 0:points, 1:edges, 2:triangles
+		var _p = p;
+		var o = {
+			program   : p.program,
+			depthTest : true, // wether to gl.enable(gl.DEPTH_TEST)
+			drawMode  : 2, // 0:points, 1:edges, 2:triangles
+			cullFace  : 1 // 0:off, 1:cull back, 2:cull front
 		};
+		// add default values
+		for(var k in o){
+			if(!_p.hasOwnProperty(k)){
+				_p[k] = o[k];
+			}
+		}
+
+		return _p;
 	}
 
 	Render( scene, camera ){
 
-		this.matrix_view.Copy( camera.matrix_view );
-		this.matrix_projection.Copy( camera.matrix_projection );
+		this.matrix_view = camera.matrix_view;
+		if( this.canvas.width != camera.width || this.canvas.height != camera.height ){
+			camera.width = this.canvas.width;
+			camera.height = this.canvas.height;
+			camera.UpdateProjectionMatrix();
+		} 
+		this.matrix_projection = camera.matrix_projection;
 
 		this.gl.clearColor( 
 			scene.backgroundColor.r,
@@ -1018,8 +1091,15 @@ EEE.WebGLRenderer = class WebGLRenderer{
 		// passes are drawn is order
 		var mat = material || this.defaultMaterial;
 		for(var i = 0; i < mat.passes.length; i++){
+			
 			if(mat.passes[i].depthTest == true){
 				this.gl.enable(this.gl.DEPTH_TEST);
+			}
+			this.gl.enable(this.gl.CULL_FACE);
+			switch(mat.passes[i].cullFace){
+				case 0: this.gl.cullFace(this.gl.FRONT_AND_BACK); break;
+				case 1: this.gl.cullFace(this.gl.BACK); break;
+				case 2: this.gl.cullFace(this.gl.FRONT); break;
 			}
 
 			this.gl.useProgram( mat.passes[i].program );
@@ -1057,7 +1137,7 @@ EEE.WebGLRenderer = class WebGLRenderer{
 					this.gl.drawElements( this.gl.POINTS, mesh.indices.length, this.gl.UNSIGNED_SHORT, 0);
 					break;
 				case 1:
-					this.gl.drawElements( this.gl.LINE_LOOP, mesh.indices.length, this.gl.UNSIGNED_SHORT, 0);
+					this.gl.drawElements( this.gl.LINES, mesh.indices.length, this.gl.UNSIGNED_SHORT, 0);
 					break;
 				case 2:
 					this.gl.drawElements( this.gl.TRIANGLES, mesh.indices.length, this.gl.UNSIGNED_SHORT, 0);

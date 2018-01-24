@@ -4,7 +4,9 @@ EEE.Input = class Input{
             up:[87,38],
             down:[83,40],
             left:[65,37],
-            right:[68,39]
+            right:[68,39],
+            jump:[32],
+            crouch:[16]
         };
         this.keys = {};
         var self = this;

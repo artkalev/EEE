@@ -1,6 +1,8 @@
 EEE.Camera = class Camera extends EEE.Obj{
     constructor(){
         super();
+        this.width = 0;
+        this.height = 0;
         this.fov = 90;
         this.near = 0.1;
         this.far = 100.0;
@@ -14,9 +16,22 @@ EEE.Camera = class Camera extends EEE.Obj{
         this.matrix_view = new EEE.Mat4().Identity();
     }
 
+    UpdateProjectionMatrix(){
+        this.aspect = this.width / this.height;
+        this.matrix_projection.PerspectiveProjection(
+            this.fov,
+            this.aspect,
+            this.near,
+            this.far
+        );
+    }
+
     UpdateMatrix(){
         super.UpdateMatrix();
         this.matrix_view.Copy( this.localToWorld );
-        //this.matrix_view.data[10] *= -1;
+        this.matrix_view.data[ 2] *= -1;
+        this.matrix_view.data[ 6] *= -1;
+        this.matrix_view.data[10] *= -1;
+        this.matrix_view.data[13] *= -1;
     }
 }

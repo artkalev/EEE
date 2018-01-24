@@ -11,7 +11,7 @@ EEE.WebGLRenderer = class WebGLRenderer{
 		this.canvas.style.height = "100%";
 		this.canvas.style.left = "0";
 		this.canvas.style.top = "0";
-		this.gl = this.canvas.getContext("webgl");
+		this.gl = this.canvas.getContext("webgl", {antialias:0});
 		if(!this.gl){ console.log("No WebGL Support!"); return; }
 		document.body.appendChild( this.canvas );
 
@@ -36,7 +36,7 @@ EEE.WebGLRenderer = class WebGLRenderer{
 
 					"void main(){",
 					"	v_vertex = a_vertex;",
-					"	v_normal = a_normal;",
+					"	v_normal = normalize(a_normal);",
 					"	v_color = a_color;",
 					"	v_uv0 = a_uv0;",
 					"	gl_Position = u_matrix_projection * u_matrix_view * u_matrix_model * vec4( a_vertex, 1.0 );",
@@ -50,21 +50,19 @@ EEE.WebGLRenderer = class WebGLRenderer{
 					"varying vec4 v_color;",
 					"varying vec2 v_uv0;",
 					"void main(){",
-					"	gl_FragColor = v_color;",
+					"	gl_FragColor = vec4(vec3(v_uv0, 0.0),1.0);",
 					"}"
 				].join("\n")
 			)
 		};
 		this.defaultMaterial = new EEE.Material([
 			this.CreateMaterialPass({
-				program:this.programs.default,
-				depthTest : true,
-				drawMode : 1 // gl.LINES
+				program:this.programs.default
 			}),
 			this.CreateMaterialPass({
 				program : this.programs.default,
+
 				drawMode : 0, // gl.POINTS
-				depthTest : true
 			})
 		]);
 	}
@@ -95,17 +93,32 @@ EEE.WebGLRenderer = class WebGLRenderer{
 	}
 
 	CreateMaterialPass(p){
-		return {
-			program:p.program,
-			depthTest:p.depthTest, // wether to gl.enable(gl.DEPTH_TEST)
-			drawMode:p.drawMode, // 0:points, 1:edges, 2:triangles
+		var _p = p;
+		var o = {
+			program   : p.program,
+			depthTest : true, // wether to gl.enable(gl.DEPTH_TEST)
+			drawMode  : 2, // 0:points, 1:edges, 2:triangles
+			cullFace  : 1 // 0:off, 1:cull back, 2:cull front
 		};
+		// add default values
+		for(var k in o){
+			if(!_p.hasOwnProperty(k)){
+				_p[k] = o[k];
+			}
+		}
+
+		return _p;
 	}
 
 	Render( scene, camera ){
 
-		this.matrix_view.Copy( camera.matrix_view );
-		this.matrix_projection.Copy( camera.matrix_projection );
+		this.matrix_view = camera.matrix_view;
+		if( this.canvas.width != camera.width || this.canvas.height != camera.height ){
+			camera.width = this.canvas.width;
+			camera.height = this.canvas.height;
+			camera.UpdateProjectionMatrix();
+		} 
+		this.matrix_projection = camera.matrix_projection;
 
 		this.gl.clearColor( 
 			scene.backgroundColor.r,
@@ -170,8 +183,15 @@ EEE.WebGLRenderer = class WebGLRenderer{
 		// passes are drawn is order
 		var mat = material || this.defaultMaterial;
 		for(var i = 0; i < mat.passes.length; i++){
+			
 			if(mat.passes[i].depthTest == true){
 				this.gl.enable(this.gl.DEPTH_TEST);
+			}
+			this.gl.enable(this.gl.CULL_FACE);
+			switch(mat.passes[i].cullFace){
+				case 0: this.gl.cullFace(this.gl.FRONT_AND_BACK); break;
+				case 1: this.gl.cullFace(this.gl.BACK); break;
+				case 2: this.gl.cullFace(this.gl.FRONT); break;
 			}
 
 			this.gl.useProgram( mat.passes[i].program );

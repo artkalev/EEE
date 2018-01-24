@@ -90,7 +90,7 @@ EEE.Mat4 = class Mat4{
     PerspectiveProjection( fov, aspect, near, far ){
         var s = 1 / Math.tan( (fov/2) * (Math.PI/180) );
         this.data.set([
-            s,0,0,0,
+            s / aspect,0,0,0,
             0,s,0,0,
             0,0,-(far/(far-near)), -1,
             0,0,-((far*near)/(far-near)), 0

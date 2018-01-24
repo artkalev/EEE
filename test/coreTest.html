@@ -16,12 +16,12 @@
             testObj.AddModule({
                 firstframe : function(){},
                 update : function(){
-                    this.owner.rotation.SetEuler(0,EEE.time,0);
+                    this.owner.rotation.SetEuler(0,EEE.time / 2,0);
                     this.owner.matrixNeedsUpdate = true;
                 }
             });
             
-            EEE.scene.activeCamera.position.z = -10;
+            EEE.scene.activeCamera.position.z = -2;
             EEE.scene.activeCamera.UpdateMatrix();
             EEE.scene.activeCamera.AddModule({
                 dir : new EEE.Vec3(),
@@ -32,6 +32,18 @@
                     }
                     if(EEE.input.GetBindingState("down")){
                         this.dir.z -= 1;
+                    }
+                    if(EEE.input.GetBindingState("left")){
+                        this.dir.x += 1;
+                    }
+                    if(EEE.input.GetBindingState("right")){
+                        this.dir.x -= 1;
+                    }
+                    if(EEE.input.GetBindingState("jump")){
+                        this.dir.y += 1;
+                    }
+                    if(EEE.input.GetBindingState("crouch")){
+                        this.dir.y -= 1;
                     }
                     this.dir.Normalize();
                     this.dir.MultiplyScalar(EEE.deltaTime);
