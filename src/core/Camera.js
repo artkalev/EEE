@@ -28,10 +28,11 @@ EEE.Camera = class Camera extends EEE.Obj{
 
     UpdateMatrix(){
         super.UpdateMatrix();
-        this.matrix_view.Copy( this.localToWorld );
-        this.matrix_view.data[ 2] *= -1;
-        this.matrix_view.data[ 6] *= -1;
-        this.matrix_view.data[10] *= -1;
-        this.matrix_view.data[13] *= -1;
+        this.matrix_view.Set([
+            1,0,0,0,
+            0,1,0,0,
+            0,0,-1,0,
+            -this.position.x,-this.position.y, this.position.z
+        ]).Multiply( this.rotation.GetMat4() );
     }
 }

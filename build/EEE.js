@@ -2,22 +2,116 @@
 
 /* src/core/header.js */
 
-////////
-// EEE //
-////////
+/*
+       ______________________________________________
+     .|                                              |
+    |#|     __________   __________   __________     |
+    |#|    |::::::::::| |::::::::::| |::::::::::|    |
+    |#|    |:+:|        |:+:|        |:+:|           |
+    |#|    |+:+|____    |+:+|____    |+:+|____       |
+    |#|    |+#++:++#|   |+#++:++#|   |+#++:++#|      |
+    |#|    |+#+|        |+#+|        |+#+|           |
+    |#|    |#+#|______  |#+#|______  |#+#|______     |
+    |#|    |##########| |##########| |##########|    |
+    |#|                                              |
+    |#|______________________________________________|
+    |################################################' 
+
+EEE (read "triple E")
+
+author  : Kalev Mölder
+website : tinkering.ee
+email   : artkalev@gmail.com
+
+This is a WebGL graphics/game engine.
+I am writing this for my own education, pleasure and use.
+So keep in mind that this engine should not be used for production.
+It is more fit for experimentation.
+
+That being said, this engine could become more stable and easily usable
+in the future.
+
+PS. no documentation exists at this time
+*/
 
 var EEE = {};
 
-// type enums
-EEE.MATH_VECTOR2 = 0x000002;
-EEE.MATH_VECTOR3 = 0x000003;
-EEE.MATH_VECTOR4 = 0x000004;
-EEE.MATH_QUATERNION = 0x000005;
-EEE.MATH_MATRIX3 = 0x000006;
-EEE.MATH_MATRIX4 = 0x000007;
+// CONSTANTS
 
-EEE.GRAPHICS_MESH = 0x000010;
-EEE.GRAPHICS_SPRITE = 0x000011;
+// type constants
+EEE.MATH_VECTOR2 = 0x0002;
+EEE.MATH_VECTOR3 = 0x0003;
+EEE.MATH_VECTOR4 = 0x0004;
+EEE.MATH_QUATERNION = 0x0005;
+EEE.MATH_MATRIX3 = 0x0006;
+EEE.MATH_MATRIX4 = 0x0007;
+
+EEE.GRAPHICS_MESH = 0x0010;
+EEE.GRAPHICS_SPRITE = 0x0011;
+
+// gl constants
+// copied from : https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/Constants
+// used to define gl properties in graphics objects before gl context is present
+
+// primitive drawtypes
+EEE.GL_POINTS = 0x0000;
+EEE.GL_LINES = 0x0001;
+EEE.GL_LINE_LOOP = 0x0002;
+EEE.GL_LINE_STRIP = 0x0003;
+EEE.GL_TRIANGLES = 0x0004;
+EEE.GL_TRIANGLE_STRIP = 0x0005;
+EEE.GL_TRIANGLE_FAN = 0x0006;
+
+// blending modes
+EEE.GL_ZERO = 0;
+EEE.GL_ONE = 1;
+EEE.GL_SRC_COLOR = 0x0300;
+EEE.GL_ONE_MINUS_SRC_COLOR = 0x0301;
+EEE.GL_SRC_ALPHA = 0x0302;
+EEE.GL_ONE_MINUS_SRC_ALPHA = 0x0303;
+EEE.GL_DST_ALPHA = 0x0304;
+EEE.GL_ONE_MINUS_DST_ALPHA = 0x0305;
+EEE.GL_DST_COLOR = 0x0306;
+EEE.GL_ONE_MINUS_DST_COLOR = 0x0307;
+EEE.GL_SRC_ALPHA_SATURATE = 0x0308;
+EEE.GL_CONSTANT_COLOR = 0x8001;
+EEE.GL_ONE_MINUS_CONSTANT_COLOR = 0x8002;
+EEE.GL_CONSTANT_ALPHA = 0x8003;
+EEE.GL_ONE_MINUS_CONSTANT_ALPHA = 0x8004;
+
+// blending equations
+EEE.GL_FUNC_ADD = 0x8006;
+EEE.GL_FUNC_SUBTRACT = 0x800A;
+EEE.GL_FUNC_REVERSE_SUBTRACT = 0x800B;
+
+// textures
+EEE.GL_NEAREST = 0x2600;
+EEE.GL_LINEAR = 0X2601;
+EEE.GL_NEAREST_MIPMAP_NEAREST = 0x2700;
+EEE.GL_LINEAR_MIPMAP_NEAREST = 0x2701;
+EEE.GL_NEAREST_MIPMAP_LINEAR = 0x2702;
+EEE.GL_LINEAR_MIPMAP_LINEAR = 0x2703;
+EEE.GL_TEXTURE_MAG_FILTER = 0x2800;
+EEE.GL_TEXTURE_MIN_FILTER = 0x2801;
+EEE.GL_TEXTURE_WRAP_S = 0x2802;
+EEE.GL_TEXTURE_WRAP_T = 0x2803;
+EEE.GL_TEXTURE_2D = 0x0DE1;
+EEE.GL_TEXTURE = 0x1702;
+EEE.GL_TEXTURE_CUBE_MAP = 0x8513;
+EEE.GL_TEXTURE_BINDING_CUBE_MAP = 0x8514;
+EEE.GL_TEXTURE_CUBE_MAP_POSITIVE_X = 0x8515;
+EEE.GL_TEXTURE_CUBE_MAP_NEGATIVE_X = 0x8516;
+EEE.GL_TEXTURE_CUBE_MAP_POSITIVE_Y = 0x8517;
+EEE.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y = 0x8518;
+EEE.GL_TEXTURE_CUBE_MAP_POSITIVE_Z = 0x8519;
+EEE.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z = 0x851A;
+EEE.GL_MAX_CUBE_MAP_TEXTURE_SIZE = 0x851C;
+EEE.GL_REPEAT = 0x2901;
+EEE.GL_CLAMP_TO_EDGE = 0x812F;
+EEE.GL_MIRRORED_REPEAT = 0x8370;
+
+// uniform types
+EEE.UNIFORM_TEXTURE2D = 0x0000;
 
 // global variables
 EEE.time = Date.now() / 1000;
@@ -42,6 +136,11 @@ EEE.Vec2 = class Vec2{
 	get x(){ return this.data[0]; } set x(v){ this.data[0] = v; }
 	get y(){ return this.data[1]; } set y(v){ this.data[1] = v; }
 	
+	Set(x,y){
+		this.data[0] = x;
+		this.data[1] = y;
+	}
+
 	LengthSqr(){
 		return this.data[0]*this.data[0] + this.data[1]*this.data[1];
 	}
@@ -449,6 +548,20 @@ EEE.Mat3 = class Mat3{
 
     */
 
+    /*
+        in case of 3D this matrix is used mainly for converting quaternion to matrix.
+
+        in case on 2D transformation matrix the data is encoded:
+            X        Y
+        +--------+--------+---+
+        | scaleX | shearY | 0 |
+        +--------+--------+---+
+        | shearX | shearY | 0 |
+        +--------+--------+---+
+        | transX | transY | 1 |
+        +--------+--------+---+
+    */
+
     constructor(){
         this.type = EEE.MATH_MATRIX3;
         this.data = new Float32Array(9);
@@ -492,6 +605,10 @@ EEE.Mat3 = class Mat3{
 
     }
 
+    TRS( position, rotation, scale ){
+        
+    }
+    
     GetMat4(){
         var m = new EEE.Mat4();
         m.data[0] = this.data[0];   m.data[4] = this.data[3];   m.data[8]  = this.data[6];     m.data[12] = 0;
@@ -534,6 +651,11 @@ EEE.Mat4 = class Mat4{
     set m01(v){ this.data[1] = v; } set m11(v){ this.data[5] = v; } set m21(v){ this.data[9] = v; }  set m31(v){ this.data[13] = v; }
     set m02(v){ this.data[2] = v; } set m12(v){ this.data[6] = v; } set m22(v){ this.data[10] = v; } set m32(v){ this.data[14] = v; }
     set m02(v){ this.data[3] = v; } set m13(v){ this.data[7] = v; } set m23(v){ this.data[11] = v; } set m33(v){ this.data[15] = v; }
+
+    Set( data ){
+        this.data.set(data);
+        return this;
+    }
 
     Identity(){
         this.data.set([
@@ -610,6 +732,102 @@ EEE.Mat4 = class Mat4{
     }
 };
 
+/* src/physics/Bounds2D.js */
+
+EEE.Bounds2D = class Bounds2D{
+    constructor(){
+        this.origin = new EEE.Vec2(0,0);
+        this.min = new EEE.Vec2(-10,-10);
+        this.max = new EEE.Vec2( 10, 10);
+    }
+
+    TestPoint( point ){
+        // todo
+    }
+}
+
+/* src/physics/Bounds3D.js */
+
+EEE.Bounds3D = class Bounds3D{
+    constructor(){
+        this.origin = new EEE.Vec3( 0,0,0 );
+        this.min = new EEE.Vec3(-1,-1,-1);
+        this.max = new EEE.Vec3( 1, 1, 1);
+    }
+
+    TestPoint( point ){
+        // todo
+    }
+}
+
+/* src/graphics/Drawable.js */
+
+// drawable is the core class for drawing meshes
+// this will be used as base for Mesh, Sprite, Particle and more.
+EEE.Drawable = class Drawable{
+    
+    constructor(){
+        this.material = null; // can be overriden by obj.material, reeplaced with default if null
+        this.drawMode = EEE.GL_TRIANGLES;
+        this.isInitialized = false;
+    }
+
+    Initialize( gl ){
+        // creating and initializing gl buffers here.
+        this.isInitialized = true;
+    }
+
+    Draw( gl ){
+        if(!this.isInitialized){
+            this.Initialize( gl );
+        }
+        // glsl program is setup by renderer before calling this function!
+        // only drawing function for this specific object here
+        // for standard mesh it would be something like this:
+        //      
+        //  bind : attribute buffers and pointers
+        //  draw : gl.drawElements() or gl.drawArrays()
+    }
+}
+
+/* src/graphics/Texture.js */
+
+EEE.Texture = class Texture{
+    constructor(src){
+        this.width = 0;
+        this.height = 0;
+        this.src = src;
+        this.data = null;
+        this.glTexture = null;
+    }
+    Initialize(gl){
+
+    }
+    Load(){
+
+    }
+}
+
+/* src/graphics/Texture2D.js */
+
+EEE.Texture2D = class Texture2D extends EEE.Texture{
+    constructor(){
+        super();
+        this.wrapS = EEE.GL_REPEAT;
+        this.wrapT = EEE.GL_REPEAT;
+        this.minFilter = EEE.GL_LINEAR;
+        this.magFilter = EEE.GL_LINEAR;
+    }
+}
+
+/* src/graphics/Texture3D.js */
+
+EEE.Texture3D = class Texture3D extends EEE.Texture{
+    constructor(){
+        super();
+    }
+}
+
 /* src/graphics/Color.js */
 
 EEE.Color = class Color{
@@ -624,18 +842,95 @@ EEE.Color = class Color{
 
 /* src/graphics/Mesh.js */
 
-/*
-    triangle winding is counter-clockwise!
-*/
-EEE.Mesh = class Mesh{
-    constructor( name, vertices, normals, colors, uvs, indices ){
-        this.type = EEE.GRAPHICS_MESH;
+EEE.Mesh = class Mesh extends EEE.Drawable{
+    constructor( name, vertices, normals, colors, uvs0, indices ){
+        super();
         this.name = name;
+        this.material = null;
         this.vertices = new Float32Array(vertices);
         this.normals = new Int8Array(normals);
         this.colors = new Uint8Array(colors);
-        this.uvs = new Float32Array(uvs);
+        this.uvs0 = new Float32Array(uvs0);
+        this.uvs1 = new Float32Array(uvs0);
         this.indices = new Uint16Array(indices);
+
+        this.VAO = null;
+
+        this.gl_vertices = null;
+        this.gl_normals = null;
+        this.gl_colors = null;
+        this.gl_uvs0 = null;
+        this.gl_uvs1 = null;
+        this.gl_indices = null;
+    }
+
+    Initialize(gl){
+        super.Initialize();
+
+        this.VAO = gl.createVertexArray();
+
+        this.gl_vertices = gl.createBuffer();
+        this.gl_normals = gl.createBuffer();
+        this.gl_colors = gl.createBuffer();
+        this.gl_uvs0 = gl.createBuffer();
+        this.gl_uvs1 = gl.createBuffer();
+        this.gl_indices = gl.createBuffer();
+        
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.gl_vertices);
+        gl.bufferData(gl.ARRAY_BUFFER, this.vertices, gl.STATIC_DRAW);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.gl_normals);
+        gl.bufferData(gl.ARRAY_BUFFER, this.normals, gl.STATIC_DRAW);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.gl_colors);
+        gl.bufferData(gl.ARRAY_BUFFER, this.colors, gl.STATIC_DRAW);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.gl_uvs0);
+        gl.bufferData(gl.ARRAY_BUFFER, this.uvs0, gl.STATIC_DRAW);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.gl_uvs1);
+        gl.bufferData(gl.ARRAY_BUFFER, this.uvs1, gl.STATIC_DRAW);
+
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.gl_indices);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.indices, gl.STATIC_DRAW);
+        
+        gl.bindBuffer(gl.ARRAY_BUFFER, null);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+
+        // creating VAO for faster drawing
+        gl.bindVertexArray(this.VAO);
+        gl.bindBuffer( gl.ARRAY_BUFFER, this.gl_vertices );
+        gl.enableVertexAttribArray(0);
+        gl.vertexAttribPointer( 0, 3, gl.FLOAT, false, 0, 0 );
+        
+        gl.bindBuffer( gl.ARRAY_BUFFER, this.gl_normals );
+        gl.enableVertexAttribArray(1);
+        gl.vertexAttribPointer( 1, 3, gl.BYTE, true, 0, 0 );	
+        
+        gl.bindBuffer( gl.ARRAY_BUFFER, this.gl_colors );
+        gl.enableVertexAttribArray(2);
+        gl.vertexAttribPointer( 2, 4, gl.UNSIGNED_BYTE, true, 0, 0 );
+        
+        gl.bindBuffer( gl.ARRAY_BUFFER, this.gl_uvs0 );
+        gl.enableVertexAttribArray(3);
+        gl.vertexAttribPointer( 3, 2, gl.FLOAT, false, 0, 0 );
+
+        gl.bindBuffer( gl.ARRAY_BUFFER, this.gl_uvs1 );
+        gl.enableVertexAttribArray(4);
+        gl.vertexAttribPointer( 4, 2, gl.FLOAT, false, 0, 0 );
+        
+        gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, this.gl_indices );
+
+        gl.bindVertexArray(null);
+        gl.bindBuffer(gl.ARRAY_BUFFER, null);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+        
+    }
+
+    Draw(gl, pass){
+        super.Draw(gl);
+        gl.bindVertexArray(this.VAO);
+        gl.drawElements( pass.drawMode, this.indices.length, gl.UNSIGNED_SHORT, 0);
     }
 }
 
@@ -727,14 +1022,89 @@ EEE.ASSETS.meshes["cube"] = new EEE.Mesh(
     ]
 );
 
+/* src/graphics/Mesh2D.js */
+
+EEE.Mesh2D = class Mesh2D extends EEE.Drawable{
+    constructor( vertices ){
+        super();
+        this.vertices = new Float32Array(vertices);
+        this.uvs = new Float32Array(vertices.length * (2/3));
+        this.gl_vertices = null;
+        this.gl_uvs = null;
+    }
+    Initialize(gl){
+        super.Initialize(gl);
+        this.gl_vertices = gl.createBuffer();
+        this.gl_uvs = gl.createBuffer();
+
+        gl.bindBuffer( gl.ARRAY_BUFFER, this.gl_vertices );
+        gl.bufferData( gl.ARRAY_BUFFER, this.vertices, gl.STATIC_DRAW );
+        gl.bindBuffer( gl.ARRAY_BUFFER, this.gl_uvs );
+        gl.bufferData( gl.ARRAY_BUFFER, this.uvs, gl.STATIC_DRAW );
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, null);
+    }
+    Draw(gl){
+        super.Draw(gl);
+        gl.bindBuffer( gl.ARRAY_BUFFER, this.gl_vertices );
+        gl.enableVertexAttribArray(0);
+        gl.vertexAttribPointer( 0, 2, gl.FLOAT, false, 0, 0 );
+
+        gl.bindBuffer( gl.ARRAY_BUFFER, this.gl_uvs );
+        gl.enableVertexAttribArray(1);
+        gl.vertexAttribPointer( 1, 2, gl.FLOAT, false, 0, 0 );
+
+        gl.drawArrays( gl.Triangle, 0, this.vertices.length / 3 );
+    }
+}
+
+/* src/core/GUI/GUI.js */
+
+EEE.GUI = class GUI extends EEE.Drawable{
+    constructor(){
+        super();
+        this.showCursor = true;
+        this.elements = [];
+    }
+    Update(){
+        if(this.showCursor){
+
+        }
+    }
+    Draw(gl){
+        // renderer will not have program and uniforms set for rendering GUI!
+        if(this.showCursor){
+            
+        }
+    }
+};
+
+/* src/core/GUI/GUIElement.js */
+
+EEE.GUIElement = class GUIElement{
+    constructor(){
+        this.position = new EEE.Vec2(0,0);
+        this.scale = new EEE.Vec2(0,0);
+        this.bounds = new EEE.Bounds2D();
+        this.drawable = null;
+    }
+
+    Update(){
+
+    }
+}
+
 /* src/core/Init.js */
 
 EEE.Init = function(){
     console.log("Started 'EEE' Initialization");
     EEE.loader = new EEE.Loader();
-    EEE.input = new EEE.Input();
-    EEE.renderer = new EEE.WebGLRenderer();
+    EEE.renderer = new EEE.Renderer();
+    if(!EEE.renderer.gl){ alert("WebGL failed to initialize! Your browser/hardware does not support WebGL?"); return; }
+    EEE.input = new EEE.Input(); // input needs for renderer canvas to be present
     EEE.scene = new EEE.Scene();
+    EEE.gui = new EEE.GUI();
+
     console.log("'EEE' Initialization Completed!");
     console.log("Starting mainloop.");
     EEE.Update();
@@ -751,7 +1121,10 @@ EEE.Update = function(){
     EEE.deltaTime = Date.now()/1000 - EEE.time;
     EEE.time = Date.now() / 1000;
     EEE.scene.Update();
-    EEE.renderer.Render( EEE.scene, EEE.scene.activeCamera );   
+    EEE.gui.Update();
+    EEE.input.Update();
+    EEE.renderer.Render( EEE.scene, EEE.scene.activeCamera );
+    EEE.renderer.RenderGUI(EEE.gui);
     requestAnimationFrame( EEE.Update );    
 }
 
@@ -759,6 +1132,10 @@ EEE.Update = function(){
 
 EEE.Input = class Input{
     constructor(){
+        this.mouse = {
+            position : new EEE.Vec2(),
+            delta : new EEE.Vec2() 
+        };
         this.bindings = {
             up:[87,38],
             down:[83,40],
@@ -769,12 +1146,39 @@ EEE.Input = class Input{
         };
         this.keys = {};
         var self = this;
+        
+        // setup keyboard input
         window.addEventListener("keydown", function( e ){
             self.keys[ e.keyCode ] = true;
         });
         window.addEventListener("keyup", function( e ){
             self.keys[ e.keyCode ] = false;
         });
+        
+        // setup mouse input
+        EEE.renderer.canvas.requestPointerLock = EEE.renderer.canvas.requestPointerLock || EEE.renderer.canvas.mozRequestPointerLock;
+        EEE.renderer.canvas.onclick = function(){
+            EEE.renderer.canvas.requestPointerLock();
+        };
+        document.onmousemove = function(e){
+            self.mouse.position.x += e.movementX;
+            self.mouse.position.y += e.movementY;
+            self.mouse.position.x = Math.min(
+                EEE.renderer.canvas.width,
+                Math.max( 0, self.mouse.position.x )
+            );
+            self.mouse.position.y = Math.min(
+                EEE.renderer.canvas.height,
+                Math.max( 0, self.mouse.position.y )
+            );
+            self.mouse.delta.x = e.movementX;
+            self.mouse.delta.y = e.movementY;
+            //console.log( self.mouse.position.data );
+        }
+    }
+
+    Update(){
+        this.mouse.delta.Set(0,0);
     }
 
     GetBindingState( bindingName ){
@@ -827,10 +1231,35 @@ EEE.Obj = class Obj{
 		this.children = [];
 		this.parent = null;
 		this.modules = [];
-		this.graphics = null;
+		this.drawable = null;
+		this.material = null; // overrides drawble's material
+
+		this._firstFrame = true;
+	}
+
+	SetParent( parent ){
+		if(this.parent == null){
+			this.parent = parent;
+			parent.children.push(this);
+		}else if(this.parent != parent){
+			var i = this.parent.children.indexOf(this);
+			if(i > -1){
+				this.parent.children.splice(i,1);
+				this.parent = parent;
+				this.parent.children.push(this);
+			}
+		}
+		this.matrixNeedsUpdate = true;
 	}
 	
+	FirstFrame(){
+		for(var i = 0; i < this.modules.length; i++){
+			this.modules[i].firstFrame();
+		}
+	}
+
 	Update(){
+		if(this._firstFrame == true){ this.FirstFrame(); this._firstFrame = false; return; }
 		for(var i = 0; i < this.modules.length; i++){
 			this.modules[i].update();
 		}
@@ -842,6 +1271,9 @@ EEE.Obj = class Obj{
 
 	UpdateMatrix(){
 		this.localToWorld.TRS( this.position, this.rotation, this.scale );
+		if(this.parent != null){
+			this.localToWorld.Multiply( this.parent.localToWorld );
+		}
 		for(var i = 0; i < this.children.length; i++){
 			this.children[i].matrixNeedsUpdate = true;
 		}
@@ -887,11 +1319,12 @@ EEE.Camera = class Camera extends EEE.Obj{
 
     UpdateMatrix(){
         super.UpdateMatrix();
-        this.matrix_view.Copy( this.localToWorld );
-        this.matrix_view.data[ 2] *= -1;
-        this.matrix_view.data[ 6] *= -1;
-        this.matrix_view.data[10] *= -1;
-        this.matrix_view.data[13] *= -1;
+        this.matrix_view.Set([
+            1,0,0,0,
+            0,1,0,0,
+            0,0,-1,0,
+            -this.position.x,-this.position.y, this.position.z
+        ]).Multiply( this.rotation.GetMat4() );
     }
 }
 
@@ -902,11 +1335,14 @@ EEE.Material = class Material{
         this.passes = passes;
         this.uniforms = {};
     }
+    SetUniform( name, type, data ){
+        this.uniforms[name] = {type:type, data:data};
+    }
 }
 
-/* src/rendering/WebGLRenderer.js */
+/* src/rendering/Renderer.js */
 
-EEE.WebGLRenderer = class WebGLRenderer{
+EEE.Renderer = class Renderer{
 	constructor(){
 		this.matrix_model = new EEE.Mat4().Identity(); 
 		this.matrix_view = new EEE.Mat4().Identity();
@@ -919,24 +1355,26 @@ EEE.WebGLRenderer = class WebGLRenderer{
 		this.canvas.style.height = "100%";
 		this.canvas.style.left = "0";
 		this.canvas.style.top = "0";
-		this.gl = this.canvas.getContext("webgl", {antialias:0});
-		if(!this.gl){ console.log("No WebGL Support!"); return; }
+		this.gl = this.canvas.getContext("webgl2", {antialias:0});
+		if(!this.gl){ console.log("No WebGL2 Support!"); return; }
 		document.body.appendChild( this.canvas );
 
 		this.activeProgram = null;
 		this.programs = {
 			"default" : this.CreateGLProgram(
 				[
+					"#version 300 es",
 					"precision mediump float;",
-					"attribute vec3 a_vertex;",
-					"attribute vec3 a_normal;",
-					"attribute vec4 a_color;",
-					"attribute vec2 a_uv0;",
+					"layout(location = 0) in vec3 a_vertex;",
+					"layout(location = 1) in vec3 a_normal;",
+					"layout(location = 2) in vec4 a_color;",
+					"layout(location = 3) in vec2 a_uv0;",
+					"layout(location = 4) in vec2 a_uv1;",
 
-					"varying vec3 v_vertex;",
-					"varying vec3 v_normal;",
-					"varying vec4 v_color;",
-					"varying vec2 v_uv0;",
+					"out vec3 v_vertex;",
+					"out vec3 v_normal;",
+					"out vec4 v_color;",
+					"out vec2 v_uv0;",
 
 					"uniform mat4 u_matrix_model;",
 					"uniform mat4 u_matrix_view;",
@@ -952,13 +1390,15 @@ EEE.WebGLRenderer = class WebGLRenderer{
 					"}"
 				].join("\n"),
 				[
+					"#version 300 es",
 					"precision mediump float;",
-					"varying vec3 v_vertex;",
-					"varying vec3 v_normal;",
-					"varying vec4 v_color;",
-					"varying vec2 v_uv0;",
+					"in vec3 v_vertex;",
+					"in vec3 v_normal;",
+					"in vec4 v_color;",
+					"in vec2 v_uv0;",
+					"out vec4 out_color;",
 					"void main(){",
-					"	gl_FragColor = vec4(vec3(v_uv0, 0.0),1.0);",
+					"	out_color = vec4(vec3(v_uv0, 0.0),1.0);",
 					"}"
 				].join("\n")
 			)
@@ -969,8 +1409,7 @@ EEE.WebGLRenderer = class WebGLRenderer{
 			}),
 			this.CreateMaterialPass({
 				program : this.programs.default,
-
-				drawMode : 0, // gl.POINTS
+				drawMode : EEE.GL_POINTS,
 			})
 		]);
 	}
@@ -978,6 +1417,12 @@ EEE.WebGLRenderer = class WebGLRenderer{
 	OnResize(){
 		this.canvas.width = Math.round(window.innerWidth / this.pixelScale);
 		this.canvas.height = Math.round(window.innerHeight / this.pixelScale);
+	}
+
+	InitializeTexture( tex ){
+		tex.glTexture = this.gl.createTexture();
+		this.gl.bindTexture( this.gl.TEXTRUE_2D, tex.glTexture );
+		this.gl.texImage2D( this.gl.TEXTURE_2D, 0, this.gl.RGBA, 1, 1, 0, this.gl.RGBA, this.gl.UNSIGNED_BYTE, new Uint8Array([0,0,255,255]) );
 	}
 
 	CreateGLProgram( vs, fs ){
@@ -1005,7 +1450,7 @@ EEE.WebGLRenderer = class WebGLRenderer{
 		var o = {
 			program   : p.program,
 			depthTest : true, // wether to gl.enable(gl.DEPTH_TEST)
-			drawMode  : 2, // 0:points, 1:edges, 2:triangles
+			drawMode  : EEE.GL_TRIANGLES, // 0:points, 1:edges, 2:triangles
 			cullFace  : 1 // 0:off, 1:cull back, 2:cull front
 		};
 		// add default values
@@ -1016,6 +1461,12 @@ EEE.WebGLRenderer = class WebGLRenderer{
 		}
 
 		return _p;
+	}
+
+	RenderGUI( gui ){
+		for(var i = 0; i < gui.elements.length; i++){
+			gui.elements[i].Draw();
+		}
 	}
 
 	Render( scene, camera ){
@@ -1039,54 +1490,14 @@ EEE.WebGLRenderer = class WebGLRenderer{
 
 		for(var i = 0; i < scene.objects.length; i++){
 			var o = scene.objects[i];
-			if(o.graphics){
-				switch( o.graphics.type ){
-					case EEE.GRAPHICS_MESH:
-						this.matrix_model = o.localToWorld;
-						this.DrawMesh( o.graphics );
-						break;
-					// todo add more drawing functions for sprites, particles etc
-				}
+			if(o.drawable){
+				this.matrix_model = o.localToWorld;
+				this.RenderDrawable( o.drawable );
 			}
 		}
 	}
 
-	DrawMesh( mesh, material){
-		// if mesh does not have gl properties they must be created
-		// gl attribute and index buffers will be added to mesh object
-		// this can be a bit expensive bt it will only affect first frame the mesh is drawn on.
-		// all scene meshes probably need to be initialized ( drawn the 1st time ) outside gameloop.
-		if(!mesh.gl){
-			console.log("creating GL attributes for mesh: "+mesh.name);
-			mesh.gl = {
-				// mesh must contain these 3 attributes to be usable!
-				attributes : {
-					a_vertex : this.gl.createBuffer(),
-					a_normal : this.gl.createBuffer(),
-					a_color : this.gl.createBuffer(),
-					a_uv0 : this.gl.createBuffer()
-				},
-				indices : this.gl.createBuffer()
-			};
-			this.gl.bindBuffer(this.gl.ARRAY_BUFFER, mesh.gl.attributes.a_vertex);
-			this.gl.bufferData(this.gl.ARRAY_BUFFER, mesh.vertices, this.gl.STATIC_DRAW);
-			
-			this.gl.bindBuffer(this.gl.ARRAY_BUFFER, mesh.gl.attributes.a_normal);
-			this.gl.bufferData(this.gl.ARRAY_BUFFER, mesh.normals, this.gl.STATIC_DRAW);
-
-			this.gl.bindBuffer(this.gl.ARRAY_BUFFER, mesh.gl.attributes.a_color);
-			this.gl.bufferData(this.gl.ARRAY_BUFFER, mesh.colors, this.gl.STATIC_DRAW);
-
-			this.gl.bindBuffer(this.gl.ARRAY_BUFFER, mesh.gl.attributes.a_uv0);
-			this.gl.bufferData(this.gl.ARRAY_BUFFER, mesh.uvs, this.gl.STATIC_DRAW);
-			
-			this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, mesh.gl.indices);
-			this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, mesh.indices, this.gl.STATIC_DRAW);
-
-			this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
-			this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, null);
-		}
-
+	RenderDrawable( drawable, material){
 		// multiple material passes supported
 		// passes are drawn is order
 		var mat = material || this.defaultMaterial;
@@ -1111,64 +1522,9 @@ EEE.WebGLRenderer = class WebGLRenderer{
 			this.gl.uniformMatrix4fv(matrixModelLoc, false, this.matrix_model.data);
 			this.gl.uniformMatrix4fv(matrixViewLoc, false, this.matrix_view.data);
 			this.gl.uniformMatrix4fv(matrixProjLoc, false, this.matrix_projection.data);
-			// else if all attributes are already initialized
-			// bind all attributes and draw triangles
 			
-			this.gl.bindBuffer( this.gl.ARRAY_BUFFER, mesh.gl.attributes.a_vertex );
-			this.gl.enableVertexAttribArray(0);
-			this.gl.vertexAttribPointer( 0, 3, this.gl.FLOAT, false, 0, 0 );
-			
-			this.gl.bindBuffer( this.gl.ARRAY_BUFFER, mesh.gl.attributes.a_normal );
-			this.gl.enableVertexAttribArray(1);
-			this.gl.vertexAttribPointer( 1, 3, this.gl.BYTE, true, 0, 0 );	
-			
-			this.gl.bindBuffer( this.gl.ARRAY_BUFFER, mesh.gl.attributes.a_color );
-			this.gl.enableVertexAttribArray(2);
-			this.gl.vertexAttribPointer( 2, 4, this.gl.UNSIGNED_BYTE, true, 0, 0 );
-			
-			this.gl.bindBuffer( this.gl.ARRAY_BUFFER, mesh.gl.attributes.a_uv0 );
-			this.gl.enableVertexAttribArray(3);
-			this.gl.vertexAttribPointer( 3, 2, this.gl.FLOAT, false, 0, 0 );
-			
-			
-			this.gl.bindBuffer( this.gl.ELEMENT_ARRAY_BUFFER, mesh.gl.indices );
-			switch(mat.passes[i].drawMode){
-				case 0:
-					this.gl.drawElements( this.gl.POINTS, mesh.indices.length, this.gl.UNSIGNED_SHORT, 0);
-					break;
-				case 1:
-					this.gl.drawElements( this.gl.LINES, mesh.indices.length, this.gl.UNSIGNED_SHORT, 0);
-					break;
-				case 2:
-					this.gl.drawElements( this.gl.TRIANGLES, mesh.indices.length, this.gl.UNSIGNED_SHORT, 0);
-					break;
-			}
-			
-
-			this.gl.bindBuffer( this.gl.ELEMENT_ARRAY_BUFFER, null );
-			this.gl.bindBuffer( this.gl.ARRAY_BUFFER, null );
+			drawable.Draw(this.gl, mat.passes[i]);
 		}
-	}
-};
-
-/* src/rendering/WebGL2Renderer.js */
-
-EEE.WebGL2Renderer = class WebGL2Renderer{
-	constructor(){
-
-		this.matrix_projection = new EEE.Mat4();
-		this.matrix_view = new EEE.Mat4();
-		
-		this.canvas = document.createElement("canvas");
-		this.gl = this.canvas.getContext("webgl");
-		if(!this.gl){ console.log("No WebGL2 Support!"); return; }
-		document.body.appendChild(this.canvas);
-	}
-	Render( root ){
-
-	}
-	DrawMesh(){
-		
 	}
 };
 

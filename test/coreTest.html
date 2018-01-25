@@ -10,22 +10,47 @@
             EEE.Init();
 
             var testObj = new EEE.Obj();
-            testObj.graphics = EEE.ASSETS.meshes["cube"];  
+            var testObj2 = new EEE.Obj();
+            testObj.drawable = EEE.ASSETS.meshes["cube"];
+            testObj2.drawable = EEE.ASSETS.meshes["cube"];
             EEE.scene.AddObj(testObj);
+            EEE.scene.AddObj(testObj2);
             
             testObj.AddModule({
-                firstframe : function(){},
+                firstFrame : function(){
+                    console.log("firstFrame");
+                },
                 update : function(){
                     this.owner.rotation.SetEuler(0,EEE.time / 2,0);
                     this.owner.matrixNeedsUpdate = true;
                 }
             });
             
-            EEE.scene.activeCamera.position.z = -2;
+            testObj2.AddModule({
+                firstFrame : function(){
+                    this.owner.position.x = 2;
+                    this.owner.matrixNeedsUpdate = true;
+                },
+                update : function(){
+                    this.owner.rotation.SetEuler(-EEE.time / 2,0,0);
+                    this.owner.matrixNeedsUpdate = true;
+                }
+            });
+
+            testObj2.SetParent(testObj);
+
+            EEE.scene.activeCamera.position.z = -7;
             EEE.scene.activeCamera.UpdateMatrix();
+            /*
             EEE.scene.activeCamera.AddModule({
                 dir : new EEE.Vec3(),
+                horizontalRot : 0,
+                verticalRot : 0,
                 update : function(){
+                    // rotation
+                    this.horizontalRot += EEE.input.mouse.delta.x*EEE.deltaTime*0.1;
+                    this.owner.rotation.SetEuler( 0, this.horizontalRot, 0 );
+                    // position
                     this.dir.Set( 0,0,0 );
                     if(EEE.input.GetBindingState("up")){
                         this.dir.z += 1;
@@ -51,6 +76,7 @@
                     this.owner.matrixNeedsUpdate = true;
                 }
             });
+            */
         </script>
     </body>
 </html>

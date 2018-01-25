@@ -29,6 +29,11 @@ EEE.Mat4 = class Mat4{
     set m02(v){ this.data[2] = v; } set m12(v){ this.data[6] = v; } set m22(v){ this.data[10] = v; } set m32(v){ this.data[14] = v; }
     set m02(v){ this.data[3] = v; } set m13(v){ this.data[7] = v; } set m23(v){ this.data[11] = v; } set m33(v){ this.data[15] = v; }
 
+    Set( data ){
+        this.data.set(data);
+        return this;
+    }
+
     Identity(){
         this.data.set([
             1,0,0,0,

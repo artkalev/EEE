@@ -10,10 +10,35 @@ EEE.Obj = class Obj{
 		this.children = [];
 		this.parent = null;
 		this.modules = [];
-		this.graphics = null;
+		this.drawable = null;
+		this.material = null; // overrides drawble's material
+
+		this._firstFrame = true;
+	}
+
+	SetParent( parent ){
+		if(this.parent == null){
+			this.parent = parent;
+			parent.children.push(this);
+		}else if(this.parent != parent){
+			var i = this.parent.children.indexOf(this);
+			if(i > -1){
+				this.parent.children.splice(i,1);
+				this.parent = parent;
+				this.parent.children.push(this);
+			}
+		}
+		this.matrixNeedsUpdate = true;
 	}
 	
+	FirstFrame(){
+		for(var i = 0; i < this.modules.length; i++){
+			this.modules[i].firstFrame();
+		}
+	}
+
 	Update(){
+		if(this._firstFrame == true){ this.FirstFrame(); this._firstFrame = false; return; }
 		for(var i = 0; i < this.modules.length; i++){
 			this.modules[i].update();
 		}
@@ -25,6 +50,9 @@ EEE.Obj = class Obj{
 
 	UpdateMatrix(){
 		this.localToWorld.TRS( this.position, this.rotation, this.scale );
+		if(this.parent != null){
+			this.localToWorld.Multiply( this.parent.localToWorld );
+		}
 		for(var i = 0; i < this.children.length; i++){
 			this.children[i].matrixNeedsUpdate = true;
 		}

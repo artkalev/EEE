@@ -7,8 +7,19 @@
 #include math/Mat3.js
 #include math/Mat4.js
 
+#include physics/Bounds2D.js
+#include physics/Bounds3D.js
+
+#include graphics/Drawable.js
+#include graphics/Texture.js
+#include graphics/Texture2D.js
+#include graphics/Texture3D.js
 #include graphics/Color.js
 #include graphics/Mesh.js
+#include graphics/Mesh2D.js
+
+#include core/GUI/GUI.js
+#include core/GUI/GUIElement.js
 
 #include core/Init.js
 #include core/Update.js
@@ -18,7 +29,6 @@
 #include core/Camera.js
 
 #include rendering/Material.js
-#include rendering/WebGLRenderer.js
-#include rendering/WebGL2Renderer.js
+#include rendering/Renderer.js
 
 #include loader/Loader.js

@@ -7,6 +7,11 @@ EEE.Vec2 = class Vec2{
 	get x(){ return this.data[0]; } set x(v){ this.data[0] = v; }
 	get y(){ return this.data[1]; } set y(v){ this.data[1] = v; }
 	
+	Set(x,y){
+		this.data[0] = x;
+		this.data[1] = y;
+	}
+
 	LengthSqr(){
 		return this.data[0]*this.data[0] + this.data[1]*this.data[1];
 	}

@@ -3,4 +3,7 @@ EEE.Material = class Material{
         this.passes = passes;
         this.uniforms = {};
     }
+    SetUniform( name, type, data ){
+        this.uniforms[name] = {type:type, data:data};
+    }
 }

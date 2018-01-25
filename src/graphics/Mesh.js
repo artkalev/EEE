@@ -1,15 +1,92 @@
-/*
-    triangle winding is counter-clockwise!
-*/
-EEE.Mesh = class Mesh{
-    constructor( name, vertices, normals, colors, uvs, indices ){
-        this.type = EEE.GRAPHICS_MESH;
+EEE.Mesh = class Mesh extends EEE.Drawable{
+    constructor( name, vertices, normals, colors, uvs0, indices ){
+        super();
         this.name = name;
+        this.material = null;
         this.vertices = new Float32Array(vertices);
         this.normals = new Int8Array(normals);
         this.colors = new Uint8Array(colors);
-        this.uvs = new Float32Array(uvs);
+        this.uvs0 = new Float32Array(uvs0);
+        this.uvs1 = new Float32Array(uvs0);
         this.indices = new Uint16Array(indices);
+
+        this.VAO = null;
+
+        this.gl_vertices = null;
+        this.gl_normals = null;
+        this.gl_colors = null;
+        this.gl_uvs0 = null;
+        this.gl_uvs1 = null;
+        this.gl_indices = null;
+    }
+
+    Initialize(gl){
+        super.Initialize();
+
+        this.VAO = gl.createVertexArray();
+
+        this.gl_vertices = gl.createBuffer();
+        this.gl_normals = gl.createBuffer();
+        this.gl_colors = gl.createBuffer();
+        this.gl_uvs0 = gl.createBuffer();
+        this.gl_uvs1 = gl.createBuffer();
+        this.gl_indices = gl.createBuffer();
+        
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.gl_vertices);
+        gl.bufferData(gl.ARRAY_BUFFER, this.vertices, gl.STATIC_DRAW);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.gl_normals);
+        gl.bufferData(gl.ARRAY_BUFFER, this.normals, gl.STATIC_DRAW);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.gl_colors);
+        gl.bufferData(gl.ARRAY_BUFFER, this.colors, gl.STATIC_DRAW);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.gl_uvs0);
+        gl.bufferData(gl.ARRAY_BUFFER, this.uvs0, gl.STATIC_DRAW);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.gl_uvs1);
+        gl.bufferData(gl.ARRAY_BUFFER, this.uvs1, gl.STATIC_DRAW);
+
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.gl_indices);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.indices, gl.STATIC_DRAW);
+        
+        gl.bindBuffer(gl.ARRAY_BUFFER, null);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+
+        // creating VAO for faster drawing
+        gl.bindVertexArray(this.VAO);
+        gl.bindBuffer( gl.ARRAY_BUFFER, this.gl_vertices );
+        gl.enableVertexAttribArray(0);
+        gl.vertexAttribPointer( 0, 3, gl.FLOAT, false, 0, 0 );
+        
+        gl.bindBuffer( gl.ARRAY_BUFFER, this.gl_normals );
+        gl.enableVertexAttribArray(1);
+        gl.vertexAttribPointer( 1, 3, gl.BYTE, true, 0, 0 );	
+        
+        gl.bindBuffer( gl.ARRAY_BUFFER, this.gl_colors );
+        gl.enableVertexAttribArray(2);
+        gl.vertexAttribPointer( 2, 4, gl.UNSIGNED_BYTE, true, 0, 0 );
+        
+        gl.bindBuffer( gl.ARRAY_BUFFER, this.gl_uvs0 );
+        gl.enableVertexAttribArray(3);
+        gl.vertexAttribPointer( 3, 2, gl.FLOAT, false, 0, 0 );
+
+        gl.bindBuffer( gl.ARRAY_BUFFER, this.gl_uvs1 );
+        gl.enableVertexAttribArray(4);
+        gl.vertexAttribPointer( 4, 2, gl.FLOAT, false, 0, 0 );
+        
+        gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, this.gl_indices );
+
+        gl.bindVertexArray(null);
+        gl.bindBuffer(gl.ARRAY_BUFFER, null);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+        
+    }
+
+    Draw(gl, pass){
+        super.Draw(gl);
+        gl.bindVertexArray(this.VAO);
+        gl.drawElements( pass.drawMode, this.indices.length, gl.UNSIGNED_SHORT, 0);
     }
 }
 

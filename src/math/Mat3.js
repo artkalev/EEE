@@ -13,6 +13,20 @@ EEE.Mat3 = class Mat3{
 
     */
 
+    /*
+        in case of 3D this matrix is used mainly for converting quaternion to matrix.
+
+        in case on 2D transformation matrix the data is encoded:
+            X        Y
+        +--------+--------+---+
+        | scaleX | shearY | 0 |
+        +--------+--------+---+
+        | shearX | shearY | 0 |
+        +--------+--------+---+
+        | transX | transY | 1 |
+        +--------+--------+---+
+    */
+
     constructor(){
         this.type = EEE.MATH_MATRIX3;
         this.data = new Float32Array(9);
@@ -56,6 +70,10 @@ EEE.Mat3 = class Mat3{
 
     }
 
+    TRS( position, rotation, scale ){
+        
+    }
+    
     GetMat4(){
         var m = new EEE.Mat4();
         m.data[0] = this.data[0];   m.data[4] = this.data[3];   m.data[8]  = this.data[6];     m.data[12] = 0;
