@@ -108,6 +108,7 @@ EEE.GL_MIRRORED_REPEAT = 0x8370;
 
 // uniform types
 EEE.UNIFORM_TEXTURE2D = 0x0000;
+EEE.UNIFORM_MATRIX4 = 0x0001;
 
 // global variables
 EEE.time = Date.now() / 1000;

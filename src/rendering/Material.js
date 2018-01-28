@@ -1,9 +1,13 @@
 EEE.Material = class Material{
-    constructor( passes ){
-        this.passes = passes;
-        this.uniforms = {};
+    constructor(){
+        this.passes = [];
+        this.uniformBlock = new EEE.GLUniformBlock({
+            u_diffuseColor : new Float32Array( [1,1,1,1] ),
+            u_diffuseTexture : new Uint8Array([0])
+        });
     }
-    SetUniform( name, type, data ){
-        this.uniforms[name] = {type:type, data:data};
+
+    Update( gl ){
+        
     }
 }

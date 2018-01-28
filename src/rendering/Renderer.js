@@ -16,58 +16,15 @@ EEE.Renderer = class Renderer{
 		document.body.appendChild( this.canvas );
 
 		this.activeProgram = null;
-		this.programs = {
-			"default" : this.CreateGLProgram(
-				[
-					"#version 300 es",
-					"precision mediump float;",
-					"layout(location = 0) in vec3 a_vertex;",
-					"layout(location = 1) in vec3 a_normal;",
-					"layout(location = 2) in vec4 a_color;",
-					"layout(location = 3) in vec2 a_uv0;",
-					"layout(location = 4) in vec2 a_uv1;",
-
-					"out vec3 v_vertex;",
-					"out vec3 v_normal;",
-					"out vec4 v_color;",
-					"out vec2 v_uv0;",
-
-					"uniform mat4 u_matrix_model;",
-					"uniform mat4 u_matrix_view;",
-					"uniform mat4 u_matrix_projection;",
-
-					"void main(){",
-					"	v_vertex = a_vertex;",
-					"	v_normal = normalize(a_normal);",
-					"	v_color = a_color;",
-					"	v_uv0 = a_uv0;",
-					"	gl_Position = u_matrix_projection * u_matrix_view * u_matrix_model * vec4( a_vertex, 1.0 );",
-					"	gl_PointSize = 10.0;",
-					"}"
-				].join("\n"),
-				[
-					"#version 300 es",
-					"precision mediump float;",
-					"in vec3 v_vertex;",
-					"in vec3 v_normal;",
-					"in vec4 v_color;",
-					"in vec2 v_uv0;",
-					"out vec4 out_color;",
-					"void main(){",
-					"	out_color = vec4(vec3(v_uv0, 0.0),1.0);",
-					"}"
-				].join("\n")
+		this.defaultMaterial = new EEE.Material();
+		this.defaultMaterial.passes.push(
+			new EEE.MaterialPass(
+				new EEE.GLProgram(
+					EEE.SHADERLIB.vertex.default,
+					EEE.SHADERLIB.fragment.default
+				)
 			)
-		};
-		this.defaultMaterial = new EEE.Material([
-			this.CreateMaterialPass({
-				program:this.programs.default
-			}),
-			this.CreateMaterialPass({
-				program : this.programs.default,
-				drawMode : EEE.GL_POINTS,
-			})
-		]);
+		);
 	}
 
 	OnResize(){
@@ -154,12 +111,9 @@ EEE.Renderer = class Renderer{
 	}
 
 	RenderDrawable( drawable, material){
-		// multiple material passes supported
-		// passes are drawn is order
 		var mat = material || this.defaultMaterial;
 		for(var i = 0; i < mat.passes.length; i++){
-			
-			if(mat.passes[i].depthTest == true){
+			if(mat.passes[i].enableDepth == true){
 				this.gl.enable(this.gl.DEPTH_TEST);
 			}
 			this.gl.enable(this.gl.CULL_FACE);
@@ -169,15 +123,11 @@ EEE.Renderer = class Renderer{
 				case 2: this.gl.cullFace(this.gl.FRONT); break;
 			}
 
-			this.gl.useProgram( mat.passes[i].program );
-			this.activeProgram = mat.passes[i].program;
+			mat.passes[i].Use(this.gl);
 
-			var matrixModelLoc = this.gl.getUniformLocation(this.activeProgram, "u_matrix_model");
-			var matrixViewLoc = this.gl.getUniformLocation(this.activeProgram, "u_matrix_view");
-			var matrixProjLoc = this.gl.getUniformLocation(this.activeProgram, "u_matrix_projection");
-			this.gl.uniformMatrix4fv(matrixModelLoc, false, this.matrix_model.data);
-			this.gl.uniformMatrix4fv(matrixViewLoc, false, this.matrix_view.data);
-			this.gl.uniformMatrix4fv(matrixProjLoc, false, this.matrix_projection.data);
+			mat.passes[i].glProgram.SetUniform(this.gl, "u_matrix_model", this.matrix_model.data, EEE.UNIFORM_MATRIX4);
+			mat.passes[i].glProgram.SetUniform(this.gl, "u_matrix_view", this.matrix_view.data, EEE.UNIFORM_MATRIX4);
+			mat.passes[i].glProgram.SetUniform(this.gl, "u_matrix_projection", this.matrix_projection.data, EEE.UNIFORM_MATRIX4);
 			
 			drawable.Draw(this.gl, mat.passes[i]);
 		}

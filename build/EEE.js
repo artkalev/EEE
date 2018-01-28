@@ -112,6 +112,7 @@ EEE.GL_MIRRORED_REPEAT = 0x8370;
 
 // uniform types
 EEE.UNIFORM_TEXTURE2D = 0x0000;
+EEE.UNIFORM_MATRIX4 = 0x0001;
 
 // global variables
 EEE.time = Date.now() / 1000;
@@ -1328,15 +1329,219 @@ EEE.Camera = class Camera extends EEE.Obj{
     }
 }
 
+/* src/rendering/SHADERS.js */
+
+EEE.SHADERLIB = {};
+EEE.SHADERLIB.vertex = {
+    default : [
+        "#version 300 es",
+        "precision mediump float;",
+        "layout(location = 0) in vec3 a_vertex;",
+        "layout(location = 1) in vec3 a_normal;",
+        "layout(location = 2) in vec4 a_color;",
+        "layout(location = 3) in vec2 a_uv0;",
+        "layout(location = 4) in vec2 a_uv1;",
+
+        "out vec3 v_vertex;",
+        "out vec3 v_normal;",
+        "out vec4 v_color;",
+        "out vec2 v_uv0;",
+
+        "uniform vec2 u_time;",
+        "uniform mat4 u_matrix_model;",
+        "uniform mat4 u_matrix_view;",
+        "uniform mat4 u_matrix_projection;",
+
+        "void main(){",
+        "	v_vertex = a_vertex;",
+        "	v_normal = normalize(a_normal);",
+        "	v_color = a_color;",
+        "	v_uv0 = a_uv0;",
+        "	gl_Position = u_matrix_projection * u_matrix_view * u_matrix_model * vec4( a_vertex, 1.0 );",
+        "	gl_PointSize = 10.0;",
+        "}"
+    ].join("\n"),
+};
+EEE.SHADERLIB.fragment = {
+    default:[
+        "#version 300 es",
+        "precision mediump float;",
+        "in vec3 v_vertex;",
+        "in vec3 v_normal;",
+        "in vec4 v_color;",
+        "in vec2 v_uv0;",
+        "out vec4 out_color;",
+        "void main(){",
+        "	out_color = vec4(vec3(v_uv0, 0.0),1.0);",
+        "}"
+    ].join("\n")
+};
+
+/* src/rendering/GLUniformBlock.js */
+
+EEE.GLUniformBlock = class{
+    constructor( props ){
+        /*
+            example properties object
+            {
+                u_time : new Float32Array(1),
+                u_matrix_view : new Float32Array(16),
+                u_matrix_projection : new Float32Array(16)
+            }
+
+            this would be in GLSL as:
+
+            uniform blockName{
+                float u_time;
+                mat4 u_matrix_view;
+                mat4 u_matrix_projection;
+            }
+
+            NB
+            ! Values must be instance of js TypedArray, even if only 1 component !
+            ! Resizing the uniform buffer is not allowed( nor reasonable )!
+        */
+        this.properties = props;
+        this.offsets = {};
+        this.array = null;        
+        this.buffer = null;
+        this.needsUpdate = true; // updates should be done as infrequently as possible!
+    }
+    Use(gl){
+        if(this.needsUpdate == true){ this.Update(gl); }
+        gl.bindBuffer(gl.UNIFORM_BUFFER, this.buffer);
+    }
+    Update(gl){
+        if(this.buffer == null){
+            this.buffer = gl.createBuffer();
+        }
+        if(this.array == null){
+            var bytecount = 0;
+            for(var name in this.properties){
+                this.offsets[name] = [0,0];
+                this.offsets[name][0] = bytecount; // starting offset in buffer
+                bytecount += this.properties[name].BYTES_PER_ELEMENT * this.properties[name].length;
+                this.offsets[name][1] = bytecount; // end offset in buffer
+            }
+            this.array = new ArrayBuffer( bytecount );
+        }
+        for(var name in this.properties){
+            var val = this.properties[name];
+            var view = null;
+            switch(val.name){
+                case "Int8Array": view = new Int8Array(this.array, this.offsets[name][0], this.offsets[name][1]); break;
+                case "Uint8Array": view = new Uint8Array(this.array, this.offsets[name][0], this.offsets[name][1]); break;
+                case "Int16Array": view = new Int16Array(this.array, this.offsets[name][0], this.offsets[name][1]); break;
+                case "Uint16Array": view = new Uint16Array(this.array, this.offsets[name][0], this.offsets[name][1]); break;
+                case "Int32Array": view = new Int32Array(this.array, this.offsets[name][0], this.offsets[name][1]); break;
+                case "Uint32Array": view = new Uint32Array(this.array, this.offsets[name][0], this.offsets[name][1]); break;
+                case "Float32Array":view = new Float32Array(this.array,this.offsets[name][0], this.offsets[name][1]); break;
+            }
+            for(var i = 0; i < val.length; i++){
+                view[i] = val[i];
+            }
+        }
+        // finally update gl buffer on gpu
+        gl.bindBuffer(gl.UNIFORM_BUFFER);
+        gl.bufferData(gl.UNIFORM_BUFFER, this.array, gl.DYNAMIC_DRAW);
+        gl.bindBuffer(gl.UNIFORM_BUFFER, null);
+    }
+}
+
+/* src/rendering/GLProgram.js */
+
+EEE.GLProgram = class GLProgram{
+    constructor(vsSource, fsSource){
+        this.vsSource = vsSource;
+        this.fsSource = fsSource;
+        this.vs = null;
+        this.fs = null;
+        this.uniformLocations = {};
+        this.program = null;
+    }
+
+    Use(gl){
+        if(this.program == null){
+            this.Initialize(gl);
+        }
+        gl.useProgram(this.program);
+    }
+
+    Initialize( gl ){
+        // assign vertex shader source and compile it
+        this.vs = gl.createShader(gl.VERTEX_SHADER);
+        gl.shaderSource(this.vs, this.vsSource);
+        gl.compileShader(this.vs);
+        var error = gl.getShaderInfoLog(this.vs);
+        if (error.length > 0) {
+            throw error;
+        }
+
+        // assign fragment shader source and compile it
+        this.fs = gl.createShader(gl.FRAGMENT_SHADER);
+        gl.shaderSource(this.fs, this.fsSource);
+        gl.compileShader(this.fs);
+        var error = gl.getShaderInfoLog(this.fs);
+        if (error.length > 0) {
+            throw error;
+        }
+
+        //create and setup shader program
+        this.program = gl.createProgram();
+        gl.attachShader( this.program, this.vs );
+        gl.attachShader( this.program, this.fs );
+        gl.linkProgram( this.program );
+        this.GetUniformLocations(gl);
+    }
+
+    SetUniform( gl, name, value, type){
+        if(this.uniformLocations[name]){
+            switch(type){
+                case EEE.UNIFORM_MATRIX4: gl.uniformMatrix4fv( this.uniformLocations[name], false, value ); 
+            }
+        }
+    }
+
+    GetUniformLocations(gl){
+        var re = new RegExp( /uniform .* (.*);/g, "m");
+        var lines = this.vsSource.split("\n");
+        for(var i = 0; i < lines.length; i++){
+            var e = re.exec( lines[i]);
+            if(e != null){
+                this.uniformLocations[e[1]] = gl.getUniformLocation(this.program, e[1]);
+            }
+        }
+        console.log( this.uniformLocations );
+    }
+}
+
+/* src/rendering/MaterialPass.js */
+
+EEE.MaterialPass = class MaterialPass{
+    constructor( glProgram ){
+        this.glProgram = glProgram;
+        this.enableDepth = true;
+        this.drawMode = EEE.GL_TRIANGLES;
+    }
+
+    Use(gl){
+        this.glProgram.Use(gl);
+    }
+}
+
 /* src/rendering/Material.js */
 
 EEE.Material = class Material{
-    constructor( passes ){
-        this.passes = passes;
-        this.uniforms = {};
+    constructor(){
+        this.passes = [];
+        this.uniformBlock = new EEE.GLUniformBlock({
+            u_diffuseColor : new Float32Array( [1,1,1,1] ),
+            u_diffuseTexture : new Uint8Array([0])
+        });
     }
-    SetUniform( name, type, data ){
-        this.uniforms[name] = {type:type, data:data};
+
+    Update( gl ){
+        
     }
 }
 
@@ -1360,58 +1565,15 @@ EEE.Renderer = class Renderer{
 		document.body.appendChild( this.canvas );
 
 		this.activeProgram = null;
-		this.programs = {
-			"default" : this.CreateGLProgram(
-				[
-					"#version 300 es",
-					"precision mediump float;",
-					"layout(location = 0) in vec3 a_vertex;",
-					"layout(location = 1) in vec3 a_normal;",
-					"layout(location = 2) in vec4 a_color;",
-					"layout(location = 3) in vec2 a_uv0;",
-					"layout(location = 4) in vec2 a_uv1;",
-
-					"out vec3 v_vertex;",
-					"out vec3 v_normal;",
-					"out vec4 v_color;",
-					"out vec2 v_uv0;",
-
-					"uniform mat4 u_matrix_model;",
-					"uniform mat4 u_matrix_view;",
-					"uniform mat4 u_matrix_projection;",
-
-					"void main(){",
-					"	v_vertex = a_vertex;",
-					"	v_normal = normalize(a_normal);",
-					"	v_color = a_color;",
-					"	v_uv0 = a_uv0;",
-					"	gl_Position = u_matrix_projection * u_matrix_view * u_matrix_model * vec4( a_vertex, 1.0 );",
-					"	gl_PointSize = 10.0;",
-					"}"
-				].join("\n"),
-				[
-					"#version 300 es",
-					"precision mediump float;",
-					"in vec3 v_vertex;",
-					"in vec3 v_normal;",
-					"in vec4 v_color;",
-					"in vec2 v_uv0;",
-					"out vec4 out_color;",
-					"void main(){",
-					"	out_color = vec4(vec3(v_uv0, 0.0),1.0);",
-					"}"
-				].join("\n")
+		this.defaultMaterial = new EEE.Material();
+		this.defaultMaterial.passes.push(
+			new EEE.MaterialPass(
+				new EEE.GLProgram(
+					EEE.SHADERLIB.vertex.default,
+					EEE.SHADERLIB.fragment.default
+				)
 			)
-		};
-		this.defaultMaterial = new EEE.Material([
-			this.CreateMaterialPass({
-				program:this.programs.default
-			}),
-			this.CreateMaterialPass({
-				program : this.programs.default,
-				drawMode : EEE.GL_POINTS,
-			})
-		]);
+		);
 	}
 
 	OnResize(){
@@ -1498,12 +1660,9 @@ EEE.Renderer = class Renderer{
 	}
 
 	RenderDrawable( drawable, material){
-		// multiple material passes supported
-		// passes are drawn is order
 		var mat = material || this.defaultMaterial;
 		for(var i = 0; i < mat.passes.length; i++){
-			
-			if(mat.passes[i].depthTest == true){
+			if(mat.passes[i].enableDepth == true){
 				this.gl.enable(this.gl.DEPTH_TEST);
 			}
 			this.gl.enable(this.gl.CULL_FACE);
@@ -1513,15 +1672,11 @@ EEE.Renderer = class Renderer{
 				case 2: this.gl.cullFace(this.gl.FRONT); break;
 			}
 
-			this.gl.useProgram( mat.passes[i].program );
-			this.activeProgram = mat.passes[i].program;
+			mat.passes[i].Use(this.gl);
 
-			var matrixModelLoc = this.gl.getUniformLocation(this.activeProgram, "u_matrix_model");
-			var matrixViewLoc = this.gl.getUniformLocation(this.activeProgram, "u_matrix_view");
-			var matrixProjLoc = this.gl.getUniformLocation(this.activeProgram, "u_matrix_projection");
-			this.gl.uniformMatrix4fv(matrixModelLoc, false, this.matrix_model.data);
-			this.gl.uniformMatrix4fv(matrixViewLoc, false, this.matrix_view.data);
-			this.gl.uniformMatrix4fv(matrixProjLoc, false, this.matrix_projection.data);
+			mat.passes[i].glProgram.SetUniform(this.gl, "u_matrix_model", this.matrix_model.data, EEE.UNIFORM_MATRIX4);
+			mat.passes[i].glProgram.SetUniform(this.gl, "u_matrix_view", this.matrix_view.data, EEE.UNIFORM_MATRIX4);
+			mat.passes[i].glProgram.SetUniform(this.gl, "u_matrix_projection", this.matrix_projection.data, EEE.UNIFORM_MATRIX4);
 			
 			drawable.Draw(this.gl, mat.passes[i]);
 		}
