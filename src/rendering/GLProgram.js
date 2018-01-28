@@ -43,9 +43,11 @@ EEE.GLProgram = class GLProgram{
     }
 
     SetUniform( gl, name, value, type){
+        if(value == null){return;}
         if(this.uniformLocations[name]){
             switch(type){
-                case EEE.UNIFORM_MATRIX4: gl.uniformMatrix4fv( this.uniformLocations[name], false, value ); 
+                case EEE.UNIFORM_MATRIX4: gl.uniformMatrix4fv( this.uniformLocations[name], false, value );
+                case EEE.UNIFORM_VEC4: gl.uniform4fv( this.uniformLocations[name], value ); break;
             }
         }
     }

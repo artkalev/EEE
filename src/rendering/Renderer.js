@@ -129,6 +129,15 @@ EEE.Renderer = class Renderer{
 			mat.passes[i].glProgram.SetUniform(this.gl, "u_matrix_view", this.matrix_view.data, EEE.UNIFORM_MATRIX4);
 			mat.passes[i].glProgram.SetUniform(this.gl, "u_matrix_projection", this.matrix_projection.data, EEE.UNIFORM_MATRIX4);
 			
+			for( var u_name in mat.uniforms ){
+				mat.passes[i].glProgram.SetUniform( 
+					mat.passes[i].glProgram, 
+					u_name,
+					mat.uniforms[u_name].value, 
+					mat.uniforms[u_name].type 
+				);
+			}
+
 			drawable.Draw(this.gl, mat.passes[i]);
 		}
 	}

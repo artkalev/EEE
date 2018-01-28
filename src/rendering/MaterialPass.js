@@ -4,7 +4,7 @@ EEE.MaterialPass = class MaterialPass{
         this.enableDepth = true;
         this.drawMode = EEE.GL_TRIANGLES;
     }
-
+    
     Use(gl){
         this.glProgram.Use(gl);
     }

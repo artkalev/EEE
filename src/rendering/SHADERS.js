@@ -38,8 +38,11 @@ EEE.SHADERLIB.fragment = {
         "in vec4 v_color;",
         "in vec2 v_uv0;",
         "out vec4 out_color;",
+
+        "uniform vec4 u_diffuse_color;",
+
         "void main(){",
-        "	out_color = vec4(vec3(v_uv0, 0.0),1.0);",
+        "	out_color = u_diffuse_color;",
         "}"
     ].join("\n")
 };

@@ -111,8 +111,9 @@ EEE.GL_CLAMP_TO_EDGE = 0x812F;
 EEE.GL_MIRRORED_REPEAT = 0x8370;
 
 // uniform types
-EEE.UNIFORM_TEXTURE2D = 0x0000;
+EEE.UNIFORM_SAMPLER2D = 0x0000;
 EEE.UNIFORM_MATRIX4 = 0x0001;
+EEE.UNIFORM_VEC4 = 0x0002;
 
 // global variables
 EEE.time = Date.now() / 1000;
@@ -1371,8 +1372,11 @@ EEE.SHADERLIB.fragment = {
         "in vec4 v_color;",
         "in vec2 v_uv0;",
         "out vec4 out_color;",
+
+        "uniform vec4 u_diffuse_color;",
+
         "void main(){",
-        "	out_color = vec4(vec3(v_uv0, 0.0),1.0);",
+        "	out_color = u_diffuse_color;",
         "}"
     ].join("\n")
 };
@@ -1495,9 +1499,11 @@ EEE.GLProgram = class GLProgram{
     }
 
     SetUniform( gl, name, value, type){
+        if(value == null){return;}
         if(this.uniformLocations[name]){
             switch(type){
-                case EEE.UNIFORM_MATRIX4: gl.uniformMatrix4fv( this.uniformLocations[name], false, value ); 
+                case EEE.UNIFORM_MATRIX4: gl.uniformMatrix4fv( this.uniformLocations[name], false, value );
+                case EEE.UNIFORM_VEC4: gl.uniform4fv( this.uniformLocations[name], value ); break;
             }
         }
     }
@@ -1523,7 +1529,7 @@ EEE.MaterialPass = class MaterialPass{
         this.enableDepth = true;
         this.drawMode = EEE.GL_TRIANGLES;
     }
-
+    
     Use(gl){
         this.glProgram.Use(gl);
     }
@@ -1534,10 +1540,10 @@ EEE.MaterialPass = class MaterialPass{
 EEE.Material = class Material{
     constructor(){
         this.passes = [];
-        this.uniformBlock = new EEE.GLUniformBlock({
-            u_diffuseColor : new Float32Array( [1,1,1,1] ),
-            u_diffuseTexture : new Uint8Array([0])
-        });
+        this.uniforms = {
+            u_diffuse_color : {value : new Float32Array([1,1,1,1]), type : EEE.UNIFORM_VEC4 },
+            u_diffuse_texture : {value : null, type : EEE.UNIFORM_SAMPLER2D }
+        };
     }
 
     Update( gl ){
@@ -1678,6 +1684,15 @@ EEE.Renderer = class Renderer{
 			mat.passes[i].glProgram.SetUniform(this.gl, "u_matrix_view", this.matrix_view.data, EEE.UNIFORM_MATRIX4);
 			mat.passes[i].glProgram.SetUniform(this.gl, "u_matrix_projection", this.matrix_projection.data, EEE.UNIFORM_MATRIX4);
 			
+			for( var u_name in mat.uniforms ){
+				mat.passes[i].glProgram.SetUniform( 
+					mat.passes[i].glProgram, 
+					u_name,
+					mat.uniforms[u_name].value, 
+					mat.uniforms[u_name].type 
+				);
+			}
+
 			drawable.Draw(this.gl, mat.passes[i]);
 		}
 	}
