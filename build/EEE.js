@@ -796,17 +796,36 @@ EEE.Drawable = class Drawable{
 
 EEE.Texture = class Texture{
     constructor(src){
-        this.width = 0;
-        this.height = 0;
-        this.src = src;
-        this.data = null;
+        this.width = 2;
+        this.height = 2;
+        this.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAMAAADz0U65AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAMAUExURWIGAm0dEGBAIGRbNHhBKnpYRGp1TnpqYXV4in1psXJ9uGd65VyBQFyXUl2fbVOzVVG4aGqHaV6jkWiPk2ONvX/ZloMPCYolGp4sFp8rKqUOB6IbFr0hF6wwOrQkJLE2Io5COb1CNqJnOIxVV51ESpZRb7JqT75racsyLNQ9RslLT4digsVrhpqZTZmsbaeRYrKMfozBep26lJ2+sbqHm7WVu6injKexrbGgppu+yJ+z4a6mxKWzyKmp4IzLlo7MrwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMPE0VMAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAZdEVYdFNvZnR3YXJlAHBhaW50Lm5ldCA0LjAuMTM0A1t6AAAAUElEQVQYV2NgkGDS5THkF2WQYlRi1uO1E2AQk2fRZzPis2eQEVdjNRM0FmKQVlQwYDcXtmTQkFRXtuCwEWGQ01Ix0bbmsmLQlNVRNeW05QYA/ScH4WqSlkEAAAAASUVORK5CYII=";
         this.glTexture = null;
+        this.needsUpdate = true;
     }
     Initialize(gl){
-
-    }
-    Load(){
-
+        this.glTexture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, this.glTexture);
+        gl.texImage2D(
+            gl.TEXTURE_2D,
+            0,
+            gl.RGBA,
+            1,1,0,
+            gl.RGBA,
+            gl.UNSIGNED_BYTE,
+            new Uint8Array([0,0,255,255])
+        );
+        
+        var img = new Image();
+        var self = this;
+        img.onload = function(){
+            gl.bindTexture(gl.TEXTURE_2D, self.glTexture);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+            gl.generateMipmap(gl.TEXTURE_2D);
+        };
+        img.src = this.src;
+        this.needsUpdate = false;
     }
 }
 
@@ -1374,9 +1393,10 @@ EEE.SHADERLIB.fragment = {
         "out vec4 out_color;",
 
         "uniform vec4 u_diffuse_color;",
+        "uniform sampler2D u_diffuse_texture;",
 
         "void main(){",
-        "	out_color = u_diffuse_color;",
+        "	out_color = u_diffuse_color * texture( u_diffuse_texture, v_uv0 );",
         "}"
     ].join("\n")
 };
@@ -1494,23 +1514,30 @@ EEE.GLProgram = class GLProgram{
         this.program = gl.createProgram();
         gl.attachShader( this.program, this.vs );
         gl.attachShader( this.program, this.fs );
+        gl.bindAttribLocation(this.program, 0, "a_vertex");
+		gl.bindAttribLocation(this.program, 1, "a_normal");
+		gl.bindAttribLocation(this.program, 2, "a_color");
+		gl.bindAttribLocation(this.program, 3, "a_uv0");
         gl.linkProgram( this.program );
         this.GetUniformLocations(gl);
     }
 
-    SetUniform( gl, name, value, type){
+    SetUniform( gl, name, value, type, texIndex){
         if(value == null){return;}
         if(this.uniformLocations[name]){
             switch(type){
-                case EEE.UNIFORM_MATRIX4: gl.uniformMatrix4fv( this.uniformLocations[name], false, value );
+                case EEE.UNIFORM_MATRIX4: gl.uniformMatrix4fv( this.uniformLocations[name], false, value ); break;
                 case EEE.UNIFORM_VEC4: gl.uniform4fv( this.uniformLocations[name], value ); break;
+                case EEE.UNIFORM_SAMPLER2D: 
+                    gl.uniform1i( this.GetUniformLocations[name], texIndex );
+                    break;
             }
         }
     }
 
     GetUniformLocations(gl){
         var re = new RegExp( /uniform .* (.*);/g, "m");
-        var lines = this.vsSource.split("\n");
+        var lines = (this.vsSource + this.fsSource).split("\n");
         for(var i = 0; i < lines.length; i++){
             var e = re.exec( lines[i]);
             if(e != null){
@@ -1541,8 +1568,8 @@ EEE.Material = class Material{
     constructor(){
         this.passes = [];
         this.uniforms = {
-            u_diffuse_color : {value : new Float32Array([1,1,1,1]), type : EEE.UNIFORM_VEC4 },
-            u_diffuse_texture : {value : null, type : EEE.UNIFORM_SAMPLER2D }
+            u_diffuse_color : {value : new Float32Array([0.8,0.8,0.8,1]), type : EEE.UNIFORM_VEC4 },
+            u_diffuse_texture : {value : null, type : EEE.UNIFORM_SAMPLER2D, unit:0 }
         };
     }
 
@@ -1580,55 +1607,13 @@ EEE.Renderer = class Renderer{
 				)
 			)
 		);
+		this.defaultTexture = new EEE.Texture();
+		this.defaultMaterial.uniforms["u_diffuse_texture"].value = this.defaultTexture;
 	}
 
 	OnResize(){
 		this.canvas.width = Math.round(window.innerWidth / this.pixelScale);
 		this.canvas.height = Math.round(window.innerHeight / this.pixelScale);
-	}
-
-	InitializeTexture( tex ){
-		tex.glTexture = this.gl.createTexture();
-		this.gl.bindTexture( this.gl.TEXTRUE_2D, tex.glTexture );
-		this.gl.texImage2D( this.gl.TEXTURE_2D, 0, this.gl.RGBA, 1, 1, 0, this.gl.RGBA, this.gl.UNSIGNED_BYTE, new Uint8Array([0,0,255,255]) );
-	}
-
-	CreateGLProgram( vs, fs ){
-		var v = this.gl.createShader(this.gl.VERTEX_SHADER);
-		var f = this.gl.createShader(this.gl.FRAGMENT_SHADER);
-		this.gl.shaderSource( v, vs );
-		this.gl.compileShader(v);
-
-		this.gl.shaderSource( f, fs );
-		this.gl.compileShader(f);
-
-		var p = this.gl.createProgram();
-		this.gl.attachShader(p, v);
-		this.gl.attachShader(p, f);
-		this.gl.bindAttribLocation(p, 0, "a_vertex");
-		this.gl.bindAttribLocation(p, 1, "a_normal");
-		this.gl.bindAttribLocation(p, 2, "a_color");
-		this.gl.bindAttribLocation(p, 3, "a_uv0");
-		this.gl.linkProgram(p);
-		return p;
-	}
-
-	CreateMaterialPass(p){
-		var _p = p;
-		var o = {
-			program   : p.program,
-			depthTest : true, // wether to gl.enable(gl.DEPTH_TEST)
-			drawMode  : EEE.GL_TRIANGLES, // 0:points, 1:edges, 2:triangles
-			cullFace  : 1 // 0:off, 1:cull back, 2:cull front
-		};
-		// add default values
-		for(var k in o){
-			if(!_p.hasOwnProperty(k)){
-				_p[k] = o[k];
-			}
-		}
-
-		return _p;
 	}
 
 	RenderGUI( gui ){
@@ -1683,16 +1668,27 @@ EEE.Renderer = class Renderer{
 			mat.passes[i].glProgram.SetUniform(this.gl, "u_matrix_model", this.matrix_model.data, EEE.UNIFORM_MATRIX4);
 			mat.passes[i].glProgram.SetUniform(this.gl, "u_matrix_view", this.matrix_view.data, EEE.UNIFORM_MATRIX4);
 			mat.passes[i].glProgram.SetUniform(this.gl, "u_matrix_projection", this.matrix_projection.data, EEE.UNIFORM_MATRIX4);
-			
+			var texIndex = 0;
 			for( var u_name in mat.uniforms ){
+				if(mat.uniforms[u_name].type == EEE.UNIFORM_SAMPLER2D){
+					if(mat.uniforms[u_name].value.needsUpdate == true){
+						mat.uniforms[u_name].value.Initialize(this.gl);
+					}
+					this.gl.activeTexture(this.gl["TEXTURE"+mat.uniforms[u_name].unit]);
+					this.gl.bindTexture(
+						this.gl.TEXTURE_2D, 
+						mat.uniforms[u_name].value.glTexture
+					);
+					mat.uniforms[u_name].unit;
+				}
 				mat.passes[i].glProgram.SetUniform( 
-					mat.passes[i].glProgram, 
+					this.gl, 
 					u_name,
-					mat.uniforms[u_name].value, 
-					mat.uniforms[u_name].type 
+					mat.uniforms[u_name].value,
+					mat.uniforms[u_name].type,
+					mat.uniforms[u_name].unit || 0
 				);
 			}
-
 			drawable.Draw(this.gl, mat.passes[i]);
 		}
 	}

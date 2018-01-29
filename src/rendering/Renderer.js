@@ -25,55 +25,13 @@ EEE.Renderer = class Renderer{
 				)
 			)
 		);
+		this.defaultTexture = new EEE.Texture();
+		this.defaultMaterial.uniforms["u_diffuse_texture"].value = this.defaultTexture;
 	}
 
 	OnResize(){
 		this.canvas.width = Math.round(window.innerWidth / this.pixelScale);
 		this.canvas.height = Math.round(window.innerHeight / this.pixelScale);
-	}
-
-	InitializeTexture( tex ){
-		tex.glTexture = this.gl.createTexture();
-		this.gl.bindTexture( this.gl.TEXTRUE_2D, tex.glTexture );
-		this.gl.texImage2D( this.gl.TEXTURE_2D, 0, this.gl.RGBA, 1, 1, 0, this.gl.RGBA, this.gl.UNSIGNED_BYTE, new Uint8Array([0,0,255,255]) );
-	}
-
-	CreateGLProgram( vs, fs ){
-		var v = this.gl.createShader(this.gl.VERTEX_SHADER);
-		var f = this.gl.createShader(this.gl.FRAGMENT_SHADER);
-		this.gl.shaderSource( v, vs );
-		this.gl.compileShader(v);
-
-		this.gl.shaderSource( f, fs );
-		this.gl.compileShader(f);
-
-		var p = this.gl.createProgram();
-		this.gl.attachShader(p, v);
-		this.gl.attachShader(p, f);
-		this.gl.bindAttribLocation(p, 0, "a_vertex");
-		this.gl.bindAttribLocation(p, 1, "a_normal");
-		this.gl.bindAttribLocation(p, 2, "a_color");
-		this.gl.bindAttribLocation(p, 3, "a_uv0");
-		this.gl.linkProgram(p);
-		return p;
-	}
-
-	CreateMaterialPass(p){
-		var _p = p;
-		var o = {
-			program   : p.program,
-			depthTest : true, // wether to gl.enable(gl.DEPTH_TEST)
-			drawMode  : EEE.GL_TRIANGLES, // 0:points, 1:edges, 2:triangles
-			cullFace  : 1 // 0:off, 1:cull back, 2:cull front
-		};
-		// add default values
-		for(var k in o){
-			if(!_p.hasOwnProperty(k)){
-				_p[k] = o[k];
-			}
-		}
-
-		return _p;
 	}
 
 	RenderGUI( gui ){
@@ -128,16 +86,27 @@ EEE.Renderer = class Renderer{
 			mat.passes[i].glProgram.SetUniform(this.gl, "u_matrix_model", this.matrix_model.data, EEE.UNIFORM_MATRIX4);
 			mat.passes[i].glProgram.SetUniform(this.gl, "u_matrix_view", this.matrix_view.data, EEE.UNIFORM_MATRIX4);
 			mat.passes[i].glProgram.SetUniform(this.gl, "u_matrix_projection", this.matrix_projection.data, EEE.UNIFORM_MATRIX4);
-			
+			var texIndex = 0;
 			for( var u_name in mat.uniforms ){
+				if(mat.uniforms[u_name].type == EEE.UNIFORM_SAMPLER2D){
+					if(mat.uniforms[u_name].value.needsUpdate == true){
+						mat.uniforms[u_name].value.Initialize(this.gl);
+					}
+					this.gl.activeTexture(this.gl["TEXTURE"+mat.uniforms[u_name].unit]);
+					this.gl.bindTexture(
+						this.gl.TEXTURE_2D, 
+						mat.uniforms[u_name].value.glTexture
+					);
+					mat.uniforms[u_name].unit;
+				}
 				mat.passes[i].glProgram.SetUniform( 
-					mat.passes[i].glProgram, 
+					this.gl, 
 					u_name,
-					mat.uniforms[u_name].value, 
-					mat.uniforms[u_name].type 
+					mat.uniforms[u_name].value,
+					mat.uniforms[u_name].type,
+					mat.uniforms[u_name].unit || 0
 				);
 			}
-
 			drawable.Draw(this.gl, mat.passes[i]);
 		}
 	}

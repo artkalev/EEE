@@ -40,9 +40,10 @@ EEE.SHADERLIB.fragment = {
         "out vec4 out_color;",
 
         "uniform vec4 u_diffuse_color;",
+        "uniform sampler2D u_diffuse_texture;",
 
         "void main(){",
-        "	out_color = u_diffuse_color;",
+        "	out_color = u_diffuse_color * texture( u_diffuse_texture, v_uv0 );",
         "}"
     ].join("\n")
 };
