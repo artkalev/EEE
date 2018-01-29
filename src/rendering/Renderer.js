@@ -71,42 +71,7 @@ EEE.Renderer = class Renderer{
 	RenderDrawable( drawable, material){
 		var mat = material || this.defaultMaterial;
 		for(var i = 0; i < mat.passes.length; i++){
-			if(mat.passes[i].enableDepth == true){
-				this.gl.enable(this.gl.DEPTH_TEST);
-			}
-			this.gl.enable(this.gl.CULL_FACE);
-			switch(mat.passes[i].cullFace){
-				case 0: this.gl.cullFace(this.gl.FRONT_AND_BACK); break;
-				case 1: this.gl.cullFace(this.gl.BACK); break;
-				case 2: this.gl.cullFace(this.gl.FRONT); break;
-			}
-
-			mat.passes[i].Use(this.gl);
-
-			mat.passes[i].glProgram.SetUniform(this.gl, "u_matrix_model", this.matrix_model.data, EEE.UNIFORM_MATRIX4);
-			mat.passes[i].glProgram.SetUniform(this.gl, "u_matrix_view", this.matrix_view.data, EEE.UNIFORM_MATRIX4);
-			mat.passes[i].glProgram.SetUniform(this.gl, "u_matrix_projection", this.matrix_projection.data, EEE.UNIFORM_MATRIX4);
-			var texIndex = 0;
-			for( var u_name in mat.uniforms ){
-				if(mat.uniforms[u_name].type == EEE.UNIFORM_SAMPLER2D){
-					if(mat.uniforms[u_name].value.needsUpdate == true){
-						mat.uniforms[u_name].value.Initialize(this.gl);
-					}
-					this.gl.activeTexture(this.gl["TEXTURE"+mat.uniforms[u_name].unit]);
-					this.gl.bindTexture(
-						this.gl.TEXTURE_2D, 
-						mat.uniforms[u_name].value.glTexture
-					);
-					mat.uniforms[u_name].unit;
-				}
-				mat.passes[i].glProgram.SetUniform( 
-					this.gl, 
-					u_name,
-					mat.uniforms[u_name].value,
-					mat.uniforms[u_name].type,
-					mat.uniforms[u_name].unit || 0
-				);
-			}
+			
 			drawable.Draw(this.gl, mat.passes[i]);
 		}
 	}

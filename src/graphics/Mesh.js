@@ -82,12 +82,6 @@ EEE.Mesh = class Mesh extends EEE.Drawable{
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
         
     }
-
-    Draw(gl, pass){
-        super.Draw(gl);
-        gl.bindVertexArray(this.VAO);
-        gl.drawElements( pass.drawMode, this.indices.length, gl.UNSIGNED_SHORT, 0);
-    }
 }
 
 EEE.ASSETS.meshes["triangle"] = new EEE.Mesh(

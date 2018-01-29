@@ -4,7 +4,7 @@ EEE.GLProgram = class GLProgram{
         this.fsSource = fsSource;
         this.vs = null;
         this.fs = null;
-        this.uniformLocations = {};
+        //this.uniformLocations = {};
         this.program = null;
     }
 
