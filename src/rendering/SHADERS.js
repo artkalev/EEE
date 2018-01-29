@@ -1,24 +1,38 @@
+// in order to optimise rendering(especially multipass rendering)
+// shaders must adhere to explicit layout locationing.
+
+// normally shaders should make use of : 
+//      EEE.SHADERLIB.attributes
+//      EEE.SHADERLIB.uniforms
+// this ensures correct and consistent attribute and uniform references
+
 EEE.SHADERLIB = {};
+EEE.SHADERLIB.attributes = `
+    layout(location = 0) in vec3 a_vertex;
+    layout(location = 1) in vec3 a_normal;
+    layout(location = 2) in vec4 a_color;
+    layout(location = 3) in vec2 a_uv0;
+    layout(location = 4) in vec2 a_uv1;
+`;
+EEE.SHADERLIB.uniforms = `
+    layout(location = 0) uniform mat4 u_matrix_model;
+    layout(location = 1) uniform mat4 u_matrix_view;
+    layout(location = 2) uniform mat4 u_matrix_projection;
+    layout(location = 3) uniform vec4 u_diffuse_color;
+`;
 EEE.SHADERLIB.vertex = {
     default : [
         "#version 300 es",
         "precision mediump float;",
-        "layout(location = 0) in vec3 a_vertex;",
-        "layout(location = 1) in vec3 a_normal;",
-        "layout(location = 2) in vec4 a_color;",
-        "layout(location = 3) in vec2 a_uv0;",
-        "layout(location = 4) in vec2 a_uv1;",
+
+        EEE.SHADERLIB.attributes,
+        EEE.SHADERLIB.uniforms,
 
         "out vec3 v_vertex;",
         "out vec3 v_normal;",
         "out vec4 v_color;",
         "out vec2 v_uv0;",
-
-        "uniform vec2 u_time;",
-        "uniform mat4 u_matrix_model;",
-        "uniform mat4 u_matrix_view;",
-        "uniform mat4 u_matrix_projection;",
-
+        
         "void main(){",
         "	v_vertex = a_vertex;",
         "	v_normal = normalize(a_normal);",
@@ -39,8 +53,7 @@ EEE.SHADERLIB.fragment = {
         "in vec2 v_uv0;",
         "out vec4 out_color;",
 
-        "uniform vec4 u_diffuse_color;",
-        "uniform sampler2D u_diffuse_texture;",
+        EEE.SHADERLIB.uniforms,
 
         "void main(){",
         "	out_color = u_diffuse_color * texture( u_diffuse_texture, v_uv0 );",

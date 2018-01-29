@@ -25,8 +25,6 @@ EEE.Renderer = class Renderer{
 				)
 			)
 		);
-		this.defaultTexture = new EEE.Texture();
-		this.defaultMaterial.uniforms["u_diffuse_texture"].value = this.defaultTexture;
 	}
 
 	OnResize(){
@@ -63,16 +61,12 @@ EEE.Renderer = class Renderer{
 			var o = scene.objects[i];
 			if(o.drawable){
 				this.matrix_model = o.localToWorld;
-				this.RenderDrawable( o.drawable );
+				this.gl.bindVertexArray( o.drawable.VAO );
+				
+				for(var passIndex = 0; passIndex < o.drawable.material.passes.length; passIndex++){
+					var pass = o.drawable.material.passes[ passIndex ];
+				}		
 			}
-		}
-	}
-
-	RenderDrawable( drawable, material){
-		var mat = material || this.defaultMaterial;
-		for(var i = 0; i < mat.passes.length; i++){
-			
-			drawable.Draw(this.gl, mat.passes[i]);
 		}
 	}
 };
