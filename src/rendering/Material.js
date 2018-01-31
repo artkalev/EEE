@@ -1,6 +1,12 @@
 EEE.Material = class Material{
     constructor( passes ){
-        this.passes = passes || [];
+        this.passes = passes || 
+            [
+                new EEE.MaterialPass( 
+                    EEE.SHADERLIB.vertex.default, 
+                    EEE.SHADERLIB.fragment.default 
+                )
+            ];
         this.uniforms = {
             /* 64 bytes */ "u_matrix_model" : new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]),
             /* 64 bytes */ "u_matrix_view" : new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]),
@@ -13,7 +19,16 @@ EEE.Material = class Material{
             /*  4 bytes */ "u_metallic" : new Float32Array([0.5]),
             /*  4 bytes */ "u_normal_strength" : new Float32Array([1.0])
         };
-        this.UBOData = new ArrayBuffer();
+        this.UBOData = new ArrayBuffer(240);
         this.UBO = null;
+    }
+
+    Update( gl ){
+        if(this.UBO == null){
+            this.UBO = gl.createBuffer();
+            gl.bindBuffer( gl.UNIFORM_BUFFER, this.UBO );
+            gl.bufferData(gl.UNIFORM_BUFFER, this.UBOData, gl.DYNAMIC_DRAW);
+            gl.bindBuffer( gl.UNIFORM_BUFFER, null);
+        }
     }
 }

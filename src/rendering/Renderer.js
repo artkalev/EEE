@@ -17,14 +17,6 @@ EEE.Renderer = class Renderer{
 
 		this.activeProgram = null;
 		this.defaultMaterial = new EEE.Material();
-		this.defaultMaterial.passes.push(
-			new EEE.MaterialPass(
-				new EEE.GLProgram(
-					EEE.SHADERLIB.vertex.default,
-					EEE.SHADERLIB.fragment.default
-				)
-			)
-		);
 	}
 
 	OnResize(){
@@ -60,11 +52,21 @@ EEE.Renderer = class Renderer{
 		for(var i = 0; i < scene.objects.length; i++){
 			var o = scene.objects[i];
 			if(o.drawable){
+				var material = o.drawable.material || this.defaultMaterial;
 				this.matrix_model = o.localToWorld;
+
+				material.Update(this.gl);
+
 				this.gl.bindVertexArray( o.drawable.VAO );
-				
-				for(var passIndex = 0; passIndex < o.drawable.material.passes.length; passIndex++){
-					var pass = o.drawable.material.passes[ passIndex ];
+				this.gl.bindBufferBase(this.gl.UNIFORM_BUFFER, 0, material.UBO);
+
+				for(var passIndex = 0; passIndex < material.passes.length; passIndex++){
+					var pass = material.passes[ passIndex ];
+					if(pass.program == null){ pass.Compile(this.gl); }
+					pass.ApplyOptions(this.gl);
+					this.gl.useProgram( pass.program );
+					
+					o.drawable.Draw( this.gl, pass );
 				}		
 			}
 		}

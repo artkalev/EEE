@@ -29,8 +29,6 @@
 #include core/Camera.js
 
 #include rendering/SHADERS.js
-#include rendering/GLUniformBlock.js
-#include rendering/GLProgram.js
 #include rendering/MaterialPass.js
 #include rendering/Material.js
 #include rendering/Renderer.js

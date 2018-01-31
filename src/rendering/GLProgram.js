@@ -6,6 +6,7 @@ EEE.GLProgram = class GLProgram{
         this.fs = null;
         //this.uniformLocations = {};
         this.program = null;
+        this.uboIndex = 0;
     }
 
     Use(gl){
@@ -41,7 +42,8 @@ EEE.GLProgram = class GLProgram{
         gl.bindAttribLocation(this.program, 0, "a_vertex");
 		gl.bindAttribLocation(this.program, 1, "a_normal");
 		gl.bindAttribLocation(this.program, 2, "a_color");
-		gl.bindAttribLocation(this.program, 3, "a_uv0");
+        gl.bindAttribLocation(this.program, 3, "a_uv0");
+        this.uboIndex = gl.getUniformBlockIndex(this.program, "u_block");
         gl.linkProgram( this.program );
         this.GetUniformLocations(gl);
     }

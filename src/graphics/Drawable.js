@@ -13,7 +13,7 @@ EEE.Drawable = class Drawable{
         this.isInitialized = true;
     }
 
-    Draw( gl ){
+    Draw( gl, pass ){
         if(!this.isInitialized){
             this.Initialize( gl );
         }
