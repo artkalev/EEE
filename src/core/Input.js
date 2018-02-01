@@ -28,6 +28,24 @@ EEE.Input = class Input{
         EEE.renderer.canvas.onclick = function(){
             EEE.renderer.canvas.requestPointerLock();
         };
+        document.exitPointerLock = document.exitPointerLock || document.mozExitPointerLock;
+        if ("onpointerlockchange" in document) {
+            document.addEventListener('pointerlockchange', lockChangeAlert, false);
+        } else if ("onmozpointerlockchange" in document) {
+            document.addEventListener('mozpointerlockchange', lockChangeAlert, false);
+        }
+        
+        function lockChangeAlert() {
+            if(document.pointerLockElement === EEE.renderer.canvas.canvas ||
+                document.mozPointerLockElement === EEE.renderer.canvas.canvas) {
+                console.log('The pointer lock status is now locked');
+                // Do something useful in response
+            } else {
+                console.log('The pointer lock status is now unlocked');      
+                // Do something useful in response
+            }
+        }
+
         document.onmousemove = function(e){
             self.mouse.position.x += e.movementX;
             self.mouse.position.y += e.movementY;

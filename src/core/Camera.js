@@ -31,8 +31,9 @@ EEE.Camera = class Camera extends EEE.Obj{
         this.matrix_view.Set([
             1,0,0,0,
             0,1,0,0,
-            0,0,-1,0,
-            -this.position.x,-this.position.y, this.position.z
+            0,0,1,0,
+            -this.position.x, -this.position.y, -this.position.z
         ]).Multiply( this.rotation.GetMat4() );
+
     }
 }

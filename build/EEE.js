@@ -62,6 +62,10 @@ EEE.GL_TRIANGLES = 0x0004;
 EEE.GL_TRIANGLE_STRIP = 0x0005;
 EEE.GL_TRIANGLE_FAN = 0x0006;
 
+EEE.GL_CULL_BACK = 0x0405;
+EEE.GL_CULL_FRONT = 0x0404;
+EEE.GL_CULL_BOTH = 0x0408;
+
 // blending modes
 EEE.GL_ZERO = 0;
 EEE.GL_ONE = 1;
@@ -239,24 +243,28 @@ EEE.Vec3 = class Vec3{
 		this.data[0] += other.data[0];
 		this.data[1] += other.data[1];
 		this.data[2] += other.data[2];
+		return this;
 	}
 	
-	Sub(other){
+	Subtract(other){
 		this.data[0] -= other.data[0];
 		this.data[1] -= other.data[1];
 		this.data[2] -= other.data[2];
+		return this;
 	}
 
 	Multiply(other){
 		this.data[0] *= other.data[0];
 		this.data[1] *= other.data[1];
 		this.data[2] *= other.data[2];
+		return this;
 	}
 
 	Divide(other){
 		this.data[0] /= other.data[0];
 		this.data[1] /= other.data[1];
 		this.data[2] /= other.data[2];
+		return this;
 	}
 
 	// vec3 - scalar operations 
@@ -265,30 +273,42 @@ EEE.Vec3 = class Vec3{
 		this.data[0] += other;
 		this.data[1] += other;
 		this.data[2] += other;
+		return this;
 	}
 	
-	SubScalar(other){
+	SubtractScalar(other){
 		this.data[0] -= other;
 		this.data[1] -= other;
 		this.data[2] -= other;
+		return this;
 	}
 
 	MultiplyScalar(other){
 		this.data[0] *= other;
 		this.data[1] *= other;
 		this.data[2] *= other;
+		return this;
 	}
 
 	DivideScalar(other){
 		this.data[0] /= other;
 		this.data[1] /= other;
 		this.data[2] /= other;
+		return this;
 	}
 
 	IsZero(){
 		return this.data[0] == 0 && this.data[1] == 0  && this.data[2] == 0;
 	}
+
+	Clone(){
+		return new EEE.Vec3( this.x,this.y,this.z );
+	}
 };
+
+EEE.right = new EEE.Vec3(1,0,0);
+EEE.up = new EEE.Vec3(0,1,0);
+EEE.forward = new EEE.Vec3(0,0,1);
 
 /* src/math/Vec4.js */
 
@@ -378,6 +398,10 @@ EEE.Vec4 = class Vec4{
 	IsZero(){
 		return this.data[0] == 0 && this.data[1] == 0  && this.data[2] == 0&& this.data[3] == 0;
 	}
+
+	ToVec3(){
+		return new EEE.Vec3( this.x, this.y, this.z );
+	}
 }
 
 /* src/math/Quat.js */
@@ -398,17 +422,77 @@ EEE.Quat = class Quat{
     set z(v){ this.data[2] = v; }
     set w(v){ this.data[3] = v; }
 
+    Length(){
+        return Math.sqrt( this.x*this.x + this.y*this.y + this.z*this.z + this.w*this.w );
+    }
+
+    Normalize(){
+        var l = this.Length();
+        this.x /= l;
+        this.y /= l;
+        this.z /= l;
+        this.w /= l;
+        return this;
+    }
+
+    Set(x,y,z,w){
+        this.data[0] = x;
+        this.data[1] = y;
+        this.data[2] = z;
+        this.data[3] = w;
+        this.Normalize();
+        return this;
+    }
+
+    Multiply( other ){
+        this.x =  this.x * other.w + this.y * other.z - this.z * other.y + this.w * other.x;
+        this.y = -this.x * other.z + this.y * other.w + this.z * other.x + this.w * other.y;
+        this.z =  this.x * other.y - this.y * other.x + this.z * other.w + this.w * other.z;
+        this.w = -this.x * other.x - this.y * other.y - this.z * other.z + this.w * other.w;
+        this.Normalize();
+        return this;
+    }
+
+    MultiplyVec4( other ){
+        return new EEE.Vec4(
+            other.x * this.x,
+            other.y * this.y,
+            other.z * this.z,
+            other.w * this.w
+        );
+    }
+
+    MultiplyVec3( other ){
+        var x = other.x, y = other.y, z = other.z;
+		var qx = this.x, qy = this.y, qz = this.z, qw = this.w;
+
+		// calculate quat * vector
+
+		var ix = qw * x + qy * z - qz * y;
+		var iy = qw * y + qz * x - qx * z;
+		var iz = qw * z + qx * y - qy * x;
+		var iw = - qx * x - qy * y - qz * z;
+
+		// calculate result * inverse quat
+
+		other.x = ix * qw + iw * - qx + iy * - qz - iz * - qy;
+		other.y = iy * qw + iw * - qy + iz * - qx - ix * - qz;
+		other.z = iz * qw + iw * - qz + ix * - qy - iy * - qx;
+
+		return other;
+    }
+
     GetEuler(){
         var result = [0,0,0];
         var test = this.data[0]*this.data[1] + this.data[2]*this.data[3];
         if (test > 0.499) { // singularity at north pole
-            result[0] = 2 * atan2(this.data[0],this.data[3]);
+            result[0] = 2 * Math.atan2(this.data[0],this.data[3]);
             result[1] = Math.PI/2;
             result[2] = 0;
             return result;
         }
         if (test < -0.499) { // singularity at south pole
-            result[0] = -2 * atan2(this.data[0],this.data[3]);
+            result[0] = -2 * Math.atan2(this.data[0],this.data[3]);
             result[1] = - Math.PI/2;
             result[2] = 0;
             return result;
@@ -416,25 +500,68 @@ EEE.Quat = class Quat{
         var sqx = this.data[0]*this.data[0];
         var sqy = this.data[1]*this.data[1];
         var sqz = this.data[2]*this.data[2];
-        result[0] = atan2(2*this.data[1]*this.data[3]-2*this.data[0]*this.data[2] , 1 - 2*sqy - 2*sqz);
-        result[1] = asin(2*test);
-        result[2] = atan2(2*this.data[0]*this.data[3]-2*this.data[1]*this.data[2] , 1 - 2*sqx - 2*sqz)
+        result[0] = Math.atan2(2*this.data[1]*this.data[3]-2*this.data[0]*this.data[2] , 1 - 2*sqy - 2*sqz);
+        result[1] = Math.asin(2*test);
+        result[2] = Math.atan2(2*this.data[0]*this.data[3]-2*this.data[1]*this.data[2] , 1 - 2*sqx - 2*sqz)
         return result;
     }
 
-    SetEuler(x,y,z){
-        var c1 = Math.cos(y);
-        var c2 = Math.cos(x);
-        var c3 = Math.cos(z);
-        var s1 = Math.sin(y);
-        var s2 = Math.sin(x);
-        var s3 = Math.sin(z);
+    SetEuler(x,y,z, order){
+        var cos = Math.cos;
+		var sin = Math.sin;
 
-        this.data[3] = c1*c2*c3 - s1*s2*s3;
-        this.data[0] = s1*s2*c3 + c1*c1*s3;
-        this.data[1] = s1*c2*c3 + c1*s2*s3;
-        this.data[2] = c1*s2*c3 - s1*c2*s3;
+		var c1 = cos( x / 2 );
+		var c2 = cos( y / 2 );
+		var c3 = cos( z / 2 );
 
+		var s1 = sin( x / 2 );
+		var s2 = sin( y / 2 );
+        var s3 = sin( z / 2 );
+
+		if ( order === 'XYZ' ) {
+
+			this.x = s1 * c2 * c3 + c1 * s2 * s3;
+			this.y = c1 * s2 * c3 - s1 * c2 * s3;
+			this.z = c1 * c2 * s3 + s1 * s2 * c3;
+			this.w = c1 * c2 * c3 - s1 * s2 * s3;
+
+		} else if ( order === 'YXZ' ) {
+
+			this.x = s1 * c2 * c3 + c1 * s2 * s3;
+			this.y = c1 * s2 * c3 - s1 * c2 * s3;
+			this.z = c1 * c2 * s3 - s1 * s2 * c3;
+			this.w = c1 * c2 * c3 + s1 * s2 * s3;
+
+		} else if ( order === 'ZXY' ) {
+
+			this.x = s1 * c2 * c3 - c1 * s2 * s3;
+			this.y = c1 * s2 * c3 + s1 * c2 * s3;
+			this.z = c1 * c2 * s3 + s1 * s2 * c3;
+			this.w = c1 * c2 * c3 - s1 * s2 * s3;
+
+		} else if ( order === 'ZYX' ) {
+
+			this.x = s1 * c2 * c3 - c1 * s2 * s3;
+			this.y = c1 * s2 * c3 + s1 * c2 * s3;
+			this.z = c1 * c2 * s3 - s1 * s2 * c3;
+			this.w = c1 * c2 * c3 + s1 * s2 * s3;
+
+		} else if ( order === 'YZX' ) {
+
+			this.x = s1 * c2 * c3 + c1 * s2 * s3;
+			this.y = c1 * s2 * c3 + s1 * c2 * s3;
+			this.z = c1 * c2 * s3 - s1 * s2 * c3;
+			this.w = c1 * c2 * c3 - s1 * s2 * s3;
+
+		} else if ( order === 'XZY' ) {
+
+			this.x = s1 * c2 * c3 - c1 * s2 * s3;
+			this.y = c1 * s2 * c3 - s1 * c2 * s3;
+			this.z = c1 * c2 * s3 + s1 * s2 * c3;
+			this.w = c1 * c2 * c3 + s1 * s2 * s3;
+
+        }
+        
         return this;
     }
 
@@ -465,29 +592,23 @@ EEE.Quat = class Quat{
 
     GetMat3(){
         var result = new EEE.Mat3();
-        var xx = this.data[0]*this.data[0];
-        var xy = this.data[0]*this.data[1];
-        var xz = this.data[0]*this.data[2];
-        var xw = this.data[0]*this.data[3];
+        var x = this.x, y = this.y, z = this.z, w = this.w;
+		var x2 = x + x, y2 = y + y, z2 = z + z;
+		var xx = x * x2, xy = x * y2, xz = x * z2;
+		var yy = y * y2, yz = y * z2, zz = z * z2;
+		var wx = w * x2, wy = w * y2, wz = w * z2;
 
-        var yy = this.data[1]*this.data[1];
-        var yz = this.data[1]*this.data[2];
-        var yw = this.data[1]*this.data[3];
-
-        var zz = this.data[2]*this.data[2];
-        var zw = this.data[2]*this.data[3];
-
-        result.m00  = 1 - 2 * ( yy + zz );
-        result.m01  =     2 * ( xy - zw );
-        result.m02  =     2 * ( xz + yw );
+        result.m00  = 1 - ( yy + zz );
+        result.m01  =     ( xy - wz );
+        result.m02  =     ( xz + wy );
         
-        result.m10  =     2 * ( xy + zw );
-        result.m11  = 1 - 2 * ( xx + zz );
-        result.m12  =     2 * ( yz - xw );
+        result.m10  =     ( xy + wz );
+        result.m11  = 1 - ( xx + zz );
+        result.m12  =     ( yz - wx );
 
-        result.m20  =     2 * ( xz - yw );
-        result.m21  =     2 * ( yz + xw );
-        result.m22  = 1 - 2 * ( xx + yy );
+        result.m20  =     ( xz - wy );
+        result.m21  =     ( yz + wx );
+        result.m22  = 1 - ( xx + yy );
 
         return result;
     }
@@ -652,7 +773,7 @@ EEE.Mat4 = class Mat4{
     set m00(v){ this.data[0] = v; } set m10(v){ this.data[4] = v; } set m20(v){ this.data[8] = v; }  set m30(v){ this.data[12] = v; }
     set m01(v){ this.data[1] = v; } set m11(v){ this.data[5] = v; } set m21(v){ this.data[9] = v; }  set m31(v){ this.data[13] = v; }
     set m02(v){ this.data[2] = v; } set m12(v){ this.data[6] = v; } set m22(v){ this.data[10] = v; } set m32(v){ this.data[14] = v; }
-    set m02(v){ this.data[3] = v; } set m13(v){ this.data[7] = v; } set m23(v){ this.data[11] = v; } set m33(v){ this.data[15] = v; }
+    set m03(v){ this.data[3] = v; } set m13(v){ this.data[7] = v; } set m23(v){ this.data[11] = v; } set m33(v){ this.data[15] = v; }
 
     Set( data ){
         this.data.set(data);
@@ -696,6 +817,13 @@ EEE.Mat4 = class Mat4{
         return this;
     }
 
+    MultiplyVec3( v ){
+        v.x = v.x * this.m00 + v.y * this.m10 + v.z * this.m20;
+        v.y = v.x * this.m01 + v.y * this.m11 + v.z * this.m21;
+        v.z = v.x * this.m02 + v.y * this.m12 + v.z * this.m22;
+        return v;
+    }
+
     TRS( position, rotation, scale ){
         this.Identity();
         var T = new EEE.Mat4([
@@ -730,6 +858,48 @@ EEE.Mat4 = class Mat4{
 
     Copy( other ){
         this.data.set(other.data);
+        return this;
+    }
+
+    GetInverse(m){
+
+        var te = this.data,
+			me = m.data,
+
+			n11 = me[ 0 ], n21 = me[ 1 ], n31 = me[ 2 ], n41 = me[ 3 ],
+			n12 = me[ 4 ], n22 = me[ 5 ], n32 = me[ 6 ], n42 = me[ 7 ],
+			n13 = me[ 8 ], n23 = me[ 9 ], n33 = me[ 10 ], n43 = me[ 11 ],
+			n14 = me[ 12 ], n24 = me[ 13 ], n34 = me[ 14 ], n44 = me[ 15 ],
+
+			t11 = n23 * n34 * n42 - n24 * n33 * n42 + n24 * n32 * n43 - n22 * n34 * n43 - n23 * n32 * n44 + n22 * n33 * n44,
+			t12 = n14 * n33 * n42 - n13 * n34 * n42 - n14 * n32 * n43 + n12 * n34 * n43 + n13 * n32 * n44 - n12 * n33 * n44,
+			t13 = n13 * n24 * n42 - n14 * n23 * n42 + n14 * n22 * n43 - n12 * n24 * n43 - n13 * n22 * n44 + n12 * n23 * n44,
+			t14 = n14 * n23 * n32 - n13 * n24 * n32 - n14 * n22 * n33 + n12 * n24 * n33 + n13 * n22 * n34 - n12 * n23 * n34;
+
+		var det = n11 * t11 + n21 * t12 + n31 * t13 + n41 * t14;
+
+        var detInv = 1 / det;
+
+		te[ 0 ] = t11 * detInv;
+		te[ 1 ] = ( n24 * n33 * n41 - n23 * n34 * n41 - n24 * n31 * n43 + n21 * n34 * n43 + n23 * n31 * n44 - n21 * n33 * n44 ) * detInv;
+		te[ 2 ] = ( n22 * n34 * n41 - n24 * n32 * n41 + n24 * n31 * n42 - n21 * n34 * n42 - n22 * n31 * n44 + n21 * n32 * n44 ) * detInv;
+		te[ 3 ] = ( n23 * n32 * n41 - n22 * n33 * n41 - n23 * n31 * n42 + n21 * n33 * n42 + n22 * n31 * n43 - n21 * n32 * n43 ) * detInv;
+
+		te[ 4 ] = t12 * detInv;
+		te[ 5 ] = ( n13 * n34 * n41 - n14 * n33 * n41 + n14 * n31 * n43 - n11 * n34 * n43 - n13 * n31 * n44 + n11 * n33 * n44 ) * detInv;
+		te[ 6 ] = ( n14 * n32 * n41 - n12 * n34 * n41 - n14 * n31 * n42 + n11 * n34 * n42 + n12 * n31 * n44 - n11 * n32 * n44 ) * detInv;
+		te[ 7 ] = ( n12 * n33 * n41 - n13 * n32 * n41 + n13 * n31 * n42 - n11 * n33 * n42 - n12 * n31 * n43 + n11 * n32 * n43 ) * detInv;
+
+		te[ 8 ] = t13 * detInv;
+		te[ 9 ] = ( n14 * n23 * n41 - n13 * n24 * n41 - n14 * n21 * n43 + n11 * n24 * n43 + n13 * n21 * n44 - n11 * n23 * n44 ) * detInv;
+		te[ 10 ] = ( n12 * n24 * n41 - n14 * n22 * n41 + n14 * n21 * n42 - n11 * n24 * n42 - n12 * n21 * n44 + n11 * n22 * n44 ) * detInv;
+		te[ 11 ] = ( n13 * n22 * n41 - n12 * n23 * n41 - n13 * n21 * n42 + n11 * n23 * n42 + n12 * n21 * n43 - n11 * n22 * n43 ) * detInv;
+
+		te[ 12 ] = t14 * detInv;
+		te[ 13 ] = ( n13 * n24 * n31 - n14 * n23 * n31 + n14 * n21 * n33 - n11 * n24 * n33 - n13 * n21 * n34 + n11 * n23 * n34 ) * detInv;
+		te[ 14 ] = ( n14 * n22 * n31 - n12 * n24 * n31 - n14 * n21 * n32 + n11 * n24 * n32 + n12 * n21 * n34 - n11 * n22 * n34 ) * detInv;
+		te[ 15 ] = ( n12 * n23 * n31 - n13 * n22 * n31 + n13 * n21 * n32 - n11 * n23 * n32 - n12 * n21 * n33 + n11 * n22 * n33 ) * detInv;
+
         return this;
     }
 };
@@ -853,11 +1023,7 @@ EEE.Texture3D = class Texture3D extends EEE.Texture{
 
 EEE.Color = class Color{
     constructor(r,g,b,a){
-        // 0 = black & 1 = white
-        this.r = r || 0;
-        this.g = g || 0;
-        this.b = b || 0;
-        this.a = a || 0;
+        this.data = new Float32Array([r,g,b,a]);
     }
 }
 
@@ -920,6 +1086,7 @@ EEE.Mesh = class Mesh extends EEE.Drawable{
 
         // creating VAO for faster drawing
         gl.bindVertexArray(this.VAO);
+        
         gl.bindBuffer( gl.ARRAY_BUFFER, this.gl_vertices );
         gl.enableVertexAttribArray(0);
         gl.vertexAttribPointer( 0, 3, gl.FLOAT, false, 0, 0 );
@@ -950,7 +1117,9 @@ EEE.Mesh = class Mesh extends EEE.Drawable{
 
     Draw( gl, pass ){
         super.Draw(gl, pass);
+        gl.bindVertexArray( this.VAO );
         gl.drawElements( pass.drawMode, this.indices.length, gl.UNSIGNED_SHORT, 0);
+        gl.bindVertexArray( null );
     }
 }
 
@@ -1180,6 +1349,24 @@ EEE.Input = class Input{
         EEE.renderer.canvas.onclick = function(){
             EEE.renderer.canvas.requestPointerLock();
         };
+        document.exitPointerLock = document.exitPointerLock || document.mozExitPointerLock;
+        if ("onpointerlockchange" in document) {
+            document.addEventListener('pointerlockchange', lockChangeAlert, false);
+        } else if ("onmozpointerlockchange" in document) {
+            document.addEventListener('mozpointerlockchange', lockChangeAlert, false);
+        }
+        
+        function lockChangeAlert() {
+            if(document.pointerLockElement === EEE.renderer.canvas.canvas ||
+                document.mozPointerLockElement === EEE.renderer.canvas.canvas) {
+                console.log('The pointer lock status is now locked');
+                // Do something useful in response
+            } else {
+                console.log('The pointer lock status is now unlocked');      
+                // Do something useful in response
+            }
+        }
+
         document.onmousemove = function(e){
             self.mouse.position.x += e.movementX;
             self.mouse.position.y += e.movementY;
@@ -1247,14 +1434,28 @@ EEE.Obj = class Obj{
 		this.rotation = new EEE.Quat();
 		this.scale = new EEE.Vec3(1,1,1);
 		this.localToWorld = new EEE.Mat4().Identity();
+		this.worldToLocal = new EEE.Mat4().Identity();
 		this.matrixNeedsUpdate = true;
+		
+		this.right = new EEE.Vec3(1,0,0);
+		this.up = new EEE.Vec3(0,1,0);
+		this.forward = new EEE.Vec3(0,0,1);
+		
 		this.children = [];
 		this.parent = null;
 		this.modules = [];
 		this.drawable = null;
 		this.material = null; // overrides drawble's material
+		this.u_modelBlock = null;
+		this.opacity = 1;
 
 		this._firstFrame = true;
+	}
+
+	Translate( offset ){
+		var v = this.rotation.MultiplyVec3(offset.Clone());
+		this.position.Add( v );
+		this.matrixNeedsUpdate = true;
 	}
 
 	SetParent( parent ){
@@ -1294,6 +1495,13 @@ EEE.Obj = class Obj{
 		if(this.parent != null){
 			this.localToWorld.Multiply( this.parent.localToWorld );
 		}
+
+		this.worldToLocal.GetInverse( this.localToWorld );
+
+		this.right.Set( this.localToWorld.data[0],this.localToWorld.data[4],this.localToWorld.data[8] ).Normalize();
+		this.up.Set( this.localToWorld.data[1],this.localToWorld.data[5],this.localToWorld.data[9] ).Normalize();
+		this.forward.Set( this.localToWorld.data[2],this.localToWorld.data[6],this.localToWorld.data[10] ).Normalize();
+
 		for(var i = 0; i < this.children.length; i++){
 			this.children[i].matrixNeedsUpdate = true;
 		}
@@ -1342,9 +1550,58 @@ EEE.Camera = class Camera extends EEE.Obj{
         this.matrix_view.Set([
             1,0,0,0,
             0,1,0,0,
-            0,0,-1,0,
-            -this.position.x,-this.position.y, this.position.z
+            0,0,1,0,
+            -this.position.x, -this.position.y, -this.position.z
         ]).Multiply( this.rotation.GetMat4() );
+
+    }
+}
+
+/* src/rendering/FrameBuffer.js */
+
+EEE.Framebuffer = class FrameBuffer{
+    constructor(){
+        this.width = 512;
+        this.height = 512;
+        this.glTexture = null;
+        this.glFramebuffer = null;
+        this.isInitialized = false;
+        this.needsUpdate = true;
+    }
+
+    Initialize(gl){
+        const attachment = gl.COLOR_ATTACHMENT0;
+        this.glTexture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, this.glTexture);
+        gl.texImage2D( 
+            gl.TEXTURE_2D,
+            0,
+            gl.RGBA,
+            this.width,
+            this.height,
+            0,
+            gl.RGBA,
+            gl.UNSIGNED_BYTE,
+            null
+        );
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+        this.glFramebuffer = gl.createFramebuffer();
+        gl.bindFramebuffer( gl.FRAMEBUFFER, this.glFramebuffer );
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, attachment, gl.TEXTURE_2D, this.glTexture, 0);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.bindTexture(gl.TEXTURE_2D, null);
+    }
+
+    Update(gl){
+        if(this.needsUpdate){
+            if(this.glFramebuffer == null){
+                this.Initialize(gl);
+            }
+            this.needsUpdate = false;
+        }
     }
 }
 
@@ -1370,20 +1627,21 @@ EEE.SHADERLIB.attributes = `
     layout(location = 4) in vec2 a_uv1;
 `;
 EEE.SHADERLIB.uniforms = `
-    struct Block{
-        mat4 u_matrix_model;
-        mat4 u_matrix_view;
-        mat4 u_matrix_projection;
+    layout (std140) uniform u_blockGlobal {
+        mat4 u_matrixView;
+        mat4 u_matrixProjection;
         float u_time;
-        float u_delta_time;
-        vec4 u_diffuse_color;
-        vec3 u_emission_color;
-        float u_smoothness;
-        float u_metallic;
-        float u_normal_strength;
+        float u_deltaTime;
     };
-    layout (std140) uniform u_block {
-        Block block;
+    
+    layout (std140) uniform u_blockModel {
+        mat4 u_matrixModel;
+        float u_opacity;
+    };
+
+    layout (std140) uniform u_blockMaterial {
+        vec4 u_diffuseColor;
+        //vec3 u_emissiveColor;
     };
 `;
 EEE.SHADERLIB.vertex = {
@@ -1394,17 +1652,32 @@ EEE.SHADERLIB.vertex = {
 
         out vec3 v_vertex;
         out vec3 v_normal;
+        out vec3 v_normalWorld;
         out vec4 v_color;
         out vec2 v_uv0;
         
         void main(){
         	v_vertex = a_vertex;
-        	v_normal = normalize(a_normal);
+            v_normal = normalize(a_normal);
+            v_normalWorld = (u_matrixModel * vec4(a_normal, 0.0)).xyz;
         	v_color = a_color;
         	v_uv0 = a_uv0;
-        	gl_Position = block.u_matrix_projection * block.u_matrix_view * block.u_matrix_model * vec4( a_vertex, 1.0 );
+        	gl_Position = u_matrixProjection * u_matrixView * u_matrixModel * vec4( a_vertex, 1.0 );
         	gl_PointSize = 10.0;
         }
+    `,
+    screenQuad : 
+        EEE.SHADERLIB.header +
+        EEE.SHADERLIB.attributes + `
+        
+        out vec3 v_vertex;
+        out vec2 v_uv0;
+        void main(){
+            v_vertex = a_vertex;
+            v_uv0 = a_uv0;
+            gl_Position = vec4( a_vertex, 1.0 );
+        }
+
     `
 };
 EEE.SHADERLIB.fragment = {
@@ -1413,6 +1686,7 @@ EEE.SHADERLIB.fragment = {
         "precision mediump float;",
         "in vec3 v_vertex;",
         "in vec3 v_normal;",
+        "in vec3 v_normalWorld;",
         "in vec4 v_color;",
         "in vec2 v_uv0;",
         "out vec4 out_color;",
@@ -1420,9 +1694,21 @@ EEE.SHADERLIB.fragment = {
         EEE.SHADERLIB.uniforms,
 
         "void main(){",
-        "	out_color = block.u_diffuse_color;",
+        "	out_color = vec4( v_normalWorld*0.5+0.5, 1.0 );",
         "}"
-    ].join("\n")
+    ].join("\n"),
+    screenQuad:
+        EEE.SHADERLIB.header + `
+        in vec3 v_vertex;
+        in vec2 v_uv0;
+
+        uniform sampler2D u_tex;
+
+        out vec4 out_color;
+        void main(){
+            out_color = texture( u_tex, v_uv0 );
+        }
+    `
 };
 
 /* src/rendering/MaterialPass.js */
@@ -1433,18 +1719,23 @@ EEE.SHADERLIB.fragment = {
 // one uniform block is shared across all passes
 
 EEE.MaterialPass = class MaterialPass{
-    constructor( vertexShaderSource, fragmentShaderSource ){
+    constructor( vertexShaderSource, fragmentShaderSource, useUniformBlocks, uniforms ){
         // shader sources
         this.vertexShaderSource = vertexShaderSource;
         this.fragmentShaderSource = fragmentShaderSource;
         
+        this.uniforms = uniforms || {};
+        this.useUniformBlocks = useUniformBlocks;
         // gl shaders and program
         this.vertexShader = null;
         this.fragmentShader = null;
         this.program = null;
-        this.uboIndex = 0;
+        this.u_blockGlobalIndex = null;
+        this.u_blockModelIndex = null;
         
         // drawing options
+        this.enableDepth = true;
+        this.cull = EEE.GL_CULL_FRONT;
         this.depthFunc = EEE.GL_DEPTH_LEQUAL;
         this.drawMode = EEE.GL_TRIANGLES;
     }
@@ -1478,18 +1769,32 @@ EEE.MaterialPass = class MaterialPass{
 		gl.bindAttribLocation(this.program, 1, "a_normal");
 		gl.bindAttribLocation(this.program, 2, "a_color");
         gl.bindAttribLocation(this.program, 3, "a_uv0");
+        gl.bindAttribLocation(this.program, 4, "a_uv1");
+
+        for(var name in this.uniforms){
+            this.uniforms[name][location] = gl.getUniformLocation(this.program, name);
+        }
 
         gl.linkProgram(this.program);
+        if(this.useUniformBlocks){
+            gl.uniformBlockBinding(this.program, gl.getUniformBlockIndex(this.program,"u_blockGlobal"), 0);
+            gl.uniformBlockBinding(this.program, gl.getUniformBlockIndex(this.program,"u_blockModel"), 1);
+            gl.uniformBlockBinding(this.program, gl.getUniformBlockIndex(this.program,"u_blockMaterial"), 2);
+        }
     }
 
     ApplyOptions( gl ){
-        // todo
-        // depth sorting
-        // stencil
-        // drawmode
-        // etc
-        // will be set here
-        // this is done before drawing
+        if(this.enableDepth){ gl.enable(gl.DEPTH_TEST); }
+        gl.enable(gl.CULL_FACE);
+        gl.cullFace( this.cull );
+    }
+
+    Use(gl){
+        if(this.program == null){
+            this.Compile(gl);
+        }
+        this.ApplyOptions(gl);
+        gl.useProgram( this.program );
     }
 }
 
@@ -1497,36 +1802,28 @@ EEE.MaterialPass = class MaterialPass{
 
 EEE.Material = class Material{
     constructor( passes ){
+        this.diffuseColor = new EEE.Color(1,1,1,1);
         this.passes = passes || 
             [
                 new EEE.MaterialPass( 
                     EEE.SHADERLIB.vertex.default, 
-                    EEE.SHADERLIB.fragment.default 
+                    EEE.SHADERLIB.fragment.default,
+                    true
                 )
             ];
-        this.uniforms = {
-            /* 64 bytes */ "u_matrix_model" : new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]),
-            /* 64 bytes */ "u_matrix_view" : new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]),
-            /* 64 bytes */ "u_matrix_projection" : new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]),
-            /*  4 bytes */ "u_time" : new Float32Array(1),
-            /*  4 bytes */ "u_delta_time" : new Float32Array(1),
-            /* 16 bytes */ "u_diffuse_color" : new Float32Array([1,1,1,1]),
-            /* 12 bytes */ "u_emission_color" : new Float32Array([0,0,0]),
-            /*  4 bytes */ "u_smoothness" : new Float32Array([0.5]),
-            /*  4 bytes */ "u_metallic" : new Float32Array([0.5]),
-            /*  4 bytes */ "u_normal_strength" : new Float32Array([1.0])
-        };
-        this.UBOData = new ArrayBuffer(240);
-        this.UBO = null;
+        this.u_blockMaterial = null;
     }
 
     Update( gl ){
-        if(this.UBO == null){
-            this.UBO = gl.createBuffer();
-            gl.bindBuffer( gl.UNIFORM_BUFFER, this.UBO );
-            gl.bufferData(gl.UNIFORM_BUFFER, this.UBOData, gl.DYNAMIC_DRAW);
+        if(this.u_blockMaterial == null){
+            this.u_blockMaterial = gl.createBuffer();
+            gl.bindBuffer( gl.UNIFORM_BUFFER, this.u_blockMaterial );
+            gl.bufferData(gl.UNIFORM_BUFFER, 48, gl.DYNAMIC_DRAW);
             gl.bindBuffer( gl.UNIFORM_BUFFER, null);
         }
+        gl.bindBuffer( gl.UNIFORM_BUFFER, this.u_blockMaterial );
+        gl.bufferSubData( gl.UNIFORM_BUFFER, 0, this.diffuseColor.data );
+        gl.bindBuffer( gl.UNIFORM_BUFFER, null);
     }
 }
 
@@ -1534,9 +1831,7 @@ EEE.Material = class Material{
 
 EEE.Renderer = class Renderer{
 	constructor(){
-		this.matrix_model = new EEE.Mat4().Identity(); 
-		this.matrix_view = new EEE.Mat4().Identity();
-		this.matrix_projection = new EEE.Mat4().Identity();
+		this.u_globalBlock = null;
 
 		this.pixelScale = 1;
 		this.canvas = document.createElement("canvas");
@@ -1549,8 +1844,27 @@ EEE.Renderer = class Renderer{
 		if(!this.gl){ console.log("No WebGL2 Support!"); return; }
 		document.body.appendChild( this.canvas );
 
-		this.activeProgram = null;
+		this.deferredBuffer0 = new EEE.Framebuffer();
+
+		// global uniform block
+		// updated on every Render()
+		this.u_globalBlock = this.gl.createBuffer();
+		this.gl.bindBuffer(this.gl.UNIFORM_BUFFER, this.u_globalBlock);
+		this.gl.bufferData( this.gl.UNIFORM_BUFFER, 136, this.gl.DYNAMIC_DRAW );
+		/* view matrix */ this.gl.bufferSubData( this.gl.UNIFORM_BUFFER, 0, new Float32Array(16), 0, 0 );
+		/* proj matrix */ this.gl.bufferSubData( this.gl.UNIFORM_BUFFER, 64, new Float32Array(16), 0, 0 );
+		/* time */        this.gl.bufferSubData( this.gl.UNIFORM_BUFFER, 128, new Float32Array(1), 0, 0 );
+		/* delta time */  this.gl.bufferSubData( this.gl.UNIFORM_BUFFER, 132, new Float32Array(1), 0, 0 );
+		this.gl.bindBuffer(this.gl.UNIFORM_BUFFER, null);
+
 		this.defaultMaterial = new EEE.Material();
+		this.composePassesMaterial = new EEE.Material([
+			new EEE.MaterialPass( 
+				EEE.SHADERLIB.vertex.screenQuad, 
+				EEE.SHADERLIB.fragment.screenQuad,
+				false
+			)
+		]);
 	}
 
 	OnResize(){
@@ -1564,15 +1878,38 @@ EEE.Renderer = class Renderer{
 		}
 	}
 
-	Render( scene, camera ){
+	ComposePasses(){
+		this.gl.bindTexture( this.gl.TEXTURE2D, this.deferredBuffer0.glTexture );
+		this.composePassesMaterial.passes[0].Use(this.gl);
+		
+		EEE.ASSETS.meshes["quad"].Draw( this.gl, this.composePassesMaterial.passes[0] );
+	}
 
-		this.matrix_view = camera.matrix_view;
+	RenderPostFX( ){
+
+	}
+
+	Render( scene, camera ){
 		if( this.canvas.width != camera.width || this.canvas.height != camera.height ){
 			camera.width = this.canvas.width;
 			camera.height = this.canvas.height;
 			camera.UpdateProjectionMatrix();
-		} 
-		this.matrix_projection = camera.matrix_projection;
+		}
+
+		// update and bind framebuffers
+		this.deferredBuffer0.Update(this.gl);
+		this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.deferredBuffer0.glFramebuffer);
+
+		/* set global uniformblock values used by all materials */
+		this.gl.bindBuffer(this.gl.UNIFORM_BUFFER, this.u_globalBlock);
+		this.gl.bufferSubData( this.gl.UNIFORM_BUFFER, 0, camera.matrix_view.data);
+		this.gl.bufferSubData( this.gl.UNIFORM_BUFFER, 64, camera.matrix_projection.data);
+		this.gl.bufferSubData( this.gl.UNIFORM_BUFFER, 128, new Float32Array([EEE.time]));
+		this.gl.bufferSubData( this.gl.UNIFORM_BUFFER, 132, new Float32Array([EEE.deltaTime]));
+		this.gl.bindBuffer(this.gl.UNIFORM_BUFFER, null);
+
+		/* u_globalBlock uniform block is bound at 0 ! */
+		this.gl.bindBufferBase( this.gl.UNIFORM_BUFFER, 0, this.u_globalBlock );
 
 		this.gl.clearColor( 
 			scene.backgroundColor.r,
@@ -1583,27 +1920,44 @@ EEE.Renderer = class Renderer{
 		this.gl.viewport(0,0,this.canvas.width,this.canvas.height);
 		this.gl.clear( this.gl.COLOR_BUFFER_BIT, this.gl.DEPTH_BUFFER_BIT );
 
+		
+
 		for(var i = 0; i < scene.objects.length; i++){
 			var o = scene.objects[i];
 			if(o.drawable){
+
+				if(o.u_modelBlock == null){
+					o.u_modelBlock = this.gl.createBuffer();
+					this.gl.bindBuffer( this.gl.UNIFORM_BUFFER, o.u_modelBlock );
+					this.gl.bufferData( this.gl.UNIFORM_BUFFER, 68, this.gl.DYNAMIC_DRAW );
+					this.gl.bindBuffer( this.gl.UNIFORM_BUFFER, null );
+				}
+
+				this.gl.bindBuffer( this.gl.UNIFORM_BUFFER, o.u_modelBlock );
+				this.gl.bufferSubData( this.gl.UNIFORM_BUFFER, 0, o.localToWorld.data);
+				this.gl.bufferSubData( this.gl.UNIFORM_BUFFER, 64, new Float32Array([o.opacity]));
+				this.gl.bindBuffer( this.gl.UNIFORM_BUFFER, null );
+
+				this.gl.bindBufferBase( this.gl.UNIFORM_BUFFER, 1, o.u_modelBlock );
+
 				var material = o.drawable.material || this.defaultMaterial;
-				this.matrix_model = o.localToWorld;
 
 				material.Update(this.gl);
 
-				this.gl.bindVertexArray( o.drawable.VAO );
-				this.gl.bindBufferBase(this.gl.UNIFORM_BUFFER, 0, material.UBO);
+				this.gl.bindBufferBase( this.gl.UNIFORM_BUFFER, 2, material.u_blockMaterial );
 
 				for(var passIndex = 0; passIndex < material.passes.length; passIndex++){
-					var pass = material.passes[ passIndex ];
-					if(pass.program == null){ pass.Compile(this.gl); }
-					pass.ApplyOptions(this.gl);
-					this.gl.useProgram( pass.program );
-					
+					var pass = material.passes[passIndex];
+					pass.Use(this.gl);
 					o.drawable.Draw( this.gl, pass );
-				}		
+				}
+				this.gl.bindVertexArray( null );
 			}
 		}
+
+		this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
+		this.ComposePasses();
+		this.RenderPostFX();
 	}
 };
 

@@ -55,6 +55,7 @@ EEE.Mesh = class Mesh extends EEE.Drawable{
 
         // creating VAO for faster drawing
         gl.bindVertexArray(this.VAO);
+        
         gl.bindBuffer( gl.ARRAY_BUFFER, this.gl_vertices );
         gl.enableVertexAttribArray(0);
         gl.vertexAttribPointer( 0, 3, gl.FLOAT, false, 0, 0 );
@@ -85,7 +86,9 @@ EEE.Mesh = class Mesh extends EEE.Drawable{
 
     Draw( gl, pass ){
         super.Draw(gl, pass);
+        gl.bindVertexArray( this.VAO );
         gl.drawElements( pass.drawMode, this.indices.length, gl.UNSIGNED_SHORT, 0);
+        gl.bindVertexArray( null );
     }
 }
 

@@ -84,4 +84,8 @@ EEE.Vec4 = class Vec4{
 	IsZero(){
 		return this.data[0] == 0 && this.data[1] == 0  && this.data[2] == 0&& this.data[3] == 0;
 	}
+
+	ToVec3(){
+		return new EEE.Vec3( this.x, this.y, this.z );
+	}
 }

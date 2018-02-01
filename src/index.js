@@ -28,6 +28,7 @@
 #include core/Obj.js
 #include core/Camera.js
 
+#include rendering/FrameBuffer.js
 #include rendering/SHADERS.js
 #include rendering/MaterialPass.js
 #include rendering/Material.js

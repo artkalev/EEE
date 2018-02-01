@@ -35,24 +35,28 @@ EEE.Vec3 = class Vec3{
 		this.data[0] += other.data[0];
 		this.data[1] += other.data[1];
 		this.data[2] += other.data[2];
+		return this;
 	}
 	
-	Sub(other){
+	Subtract(other){
 		this.data[0] -= other.data[0];
 		this.data[1] -= other.data[1];
 		this.data[2] -= other.data[2];
+		return this;
 	}
 
 	Multiply(other){
 		this.data[0] *= other.data[0];
 		this.data[1] *= other.data[1];
 		this.data[2] *= other.data[2];
+		return this;
 	}
 
 	Divide(other){
 		this.data[0] /= other.data[0];
 		this.data[1] /= other.data[1];
 		this.data[2] /= other.data[2];
+		return this;
 	}
 
 	// vec3 - scalar operations 
@@ -61,27 +65,39 @@ EEE.Vec3 = class Vec3{
 		this.data[0] += other;
 		this.data[1] += other;
 		this.data[2] += other;
+		return this;
 	}
 	
-	SubScalar(other){
+	SubtractScalar(other){
 		this.data[0] -= other;
 		this.data[1] -= other;
 		this.data[2] -= other;
+		return this;
 	}
 
 	MultiplyScalar(other){
 		this.data[0] *= other;
 		this.data[1] *= other;
 		this.data[2] *= other;
+		return this;
 	}
 
 	DivideScalar(other){
 		this.data[0] /= other;
 		this.data[1] /= other;
 		this.data[2] /= other;
+		return this;
 	}
 
 	IsZero(){
 		return this.data[0] == 0 && this.data[1] == 0  && this.data[2] == 0;
 	}
+
+	Clone(){
+		return new EEE.Vec3( this.x,this.y,this.z );
+	}
 };
+
+EEE.right = new EEE.Vec3(1,0,0);
+EEE.up = new EEE.Vec3(0,1,0);
+EEE.forward = new EEE.Vec3(0,0,1);

@@ -1,8 +1,6 @@
 EEE.Renderer = class Renderer{
 	constructor(){
-		this.matrix_model = new EEE.Mat4().Identity(); 
-		this.matrix_view = new EEE.Mat4().Identity();
-		this.matrix_projection = new EEE.Mat4().Identity();
+		this.u_globalBlock = null;
 
 		this.pixelScale = 1;
 		this.canvas = document.createElement("canvas");
@@ -15,8 +13,27 @@ EEE.Renderer = class Renderer{
 		if(!this.gl){ console.log("No WebGL2 Support!"); return; }
 		document.body.appendChild( this.canvas );
 
-		this.activeProgram = null;
+		this.deferredBuffer0 = new EEE.Framebuffer();
+
+		// global uniform block
+		// updated on every Render()
+		this.u_globalBlock = this.gl.createBuffer();
+		this.gl.bindBuffer(this.gl.UNIFORM_BUFFER, this.u_globalBlock);
+		this.gl.bufferData( this.gl.UNIFORM_BUFFER, 136, this.gl.DYNAMIC_DRAW );
+		/* view matrix */ this.gl.bufferSubData( this.gl.UNIFORM_BUFFER, 0, new Float32Array(16), 0, 0 );
+		/* proj matrix */ this.gl.bufferSubData( this.gl.UNIFORM_BUFFER, 64, new Float32Array(16), 0, 0 );
+		/* time */        this.gl.bufferSubData( this.gl.UNIFORM_BUFFER, 128, new Float32Array(1), 0, 0 );
+		/* delta time */  this.gl.bufferSubData( this.gl.UNIFORM_BUFFER, 132, new Float32Array(1), 0, 0 );
+		this.gl.bindBuffer(this.gl.UNIFORM_BUFFER, null);
+
 		this.defaultMaterial = new EEE.Material();
+		this.composePassesMaterial = new EEE.Material([
+			new EEE.MaterialPass( 
+				EEE.SHADERLIB.vertex.screenQuad, 
+				EEE.SHADERLIB.fragment.screenQuad,
+				false
+			)
+		]);
 	}
 
 	OnResize(){
@@ -30,15 +47,38 @@ EEE.Renderer = class Renderer{
 		}
 	}
 
-	Render( scene, camera ){
+	ComposePasses(){
+		this.gl.bindTexture( this.gl.TEXTURE2D, this.deferredBuffer0.glTexture );
+		this.composePassesMaterial.passes[0].Use(this.gl);
+		
+		EEE.ASSETS.meshes["quad"].Draw( this.gl, this.composePassesMaterial.passes[0] );
+	}
 
-		this.matrix_view = camera.matrix_view;
+	RenderPostFX( ){
+
+	}
+
+	Render( scene, camera ){
 		if( this.canvas.width != camera.width || this.canvas.height != camera.height ){
 			camera.width = this.canvas.width;
 			camera.height = this.canvas.height;
 			camera.UpdateProjectionMatrix();
-		} 
-		this.matrix_projection = camera.matrix_projection;
+		}
+
+		// update and bind framebuffers
+		this.deferredBuffer0.Update(this.gl);
+		this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.deferredBuffer0.glFramebuffer);
+
+		/* set global uniformblock values used by all materials */
+		this.gl.bindBuffer(this.gl.UNIFORM_BUFFER, this.u_globalBlock);
+		this.gl.bufferSubData( this.gl.UNIFORM_BUFFER, 0, camera.matrix_view.data);
+		this.gl.bufferSubData( this.gl.UNIFORM_BUFFER, 64, camera.matrix_projection.data);
+		this.gl.bufferSubData( this.gl.UNIFORM_BUFFER, 128, new Float32Array([EEE.time]));
+		this.gl.bufferSubData( this.gl.UNIFORM_BUFFER, 132, new Float32Array([EEE.deltaTime]));
+		this.gl.bindBuffer(this.gl.UNIFORM_BUFFER, null);
+
+		/* u_globalBlock uniform block is bound at 0 ! */
+		this.gl.bindBufferBase( this.gl.UNIFORM_BUFFER, 0, this.u_globalBlock );
 
 		this.gl.clearColor( 
 			scene.backgroundColor.r,
@@ -49,26 +89,43 @@ EEE.Renderer = class Renderer{
 		this.gl.viewport(0,0,this.canvas.width,this.canvas.height);
 		this.gl.clear( this.gl.COLOR_BUFFER_BIT, this.gl.DEPTH_BUFFER_BIT );
 
+		
+
 		for(var i = 0; i < scene.objects.length; i++){
 			var o = scene.objects[i];
 			if(o.drawable){
+
+				if(o.u_modelBlock == null){
+					o.u_modelBlock = this.gl.createBuffer();
+					this.gl.bindBuffer( this.gl.UNIFORM_BUFFER, o.u_modelBlock );
+					this.gl.bufferData( this.gl.UNIFORM_BUFFER, 68, this.gl.DYNAMIC_DRAW );
+					this.gl.bindBuffer( this.gl.UNIFORM_BUFFER, null );
+				}
+
+				this.gl.bindBuffer( this.gl.UNIFORM_BUFFER, o.u_modelBlock );
+				this.gl.bufferSubData( this.gl.UNIFORM_BUFFER, 0, o.localToWorld.data);
+				this.gl.bufferSubData( this.gl.UNIFORM_BUFFER, 64, new Float32Array([o.opacity]));
+				this.gl.bindBuffer( this.gl.UNIFORM_BUFFER, null );
+
+				this.gl.bindBufferBase( this.gl.UNIFORM_BUFFER, 1, o.u_modelBlock );
+
 				var material = o.drawable.material || this.defaultMaterial;
-				this.matrix_model = o.localToWorld;
 
 				material.Update(this.gl);
 
-				this.gl.bindVertexArray( o.drawable.VAO );
-				this.gl.bindBufferBase(this.gl.UNIFORM_BUFFER, 0, material.UBO);
+				this.gl.bindBufferBase( this.gl.UNIFORM_BUFFER, 2, material.u_blockMaterial );
 
 				for(var passIndex = 0; passIndex < material.passes.length; passIndex++){
-					var pass = material.passes[ passIndex ];
-					if(pass.program == null){ pass.Compile(this.gl); }
-					pass.ApplyOptions(this.gl);
-					this.gl.useProgram( pass.program );
-					
+					var pass = material.passes[passIndex];
+					pass.Use(this.gl);
 					o.drawable.Draw( this.gl, pass );
-				}		
+				}
+				this.gl.bindVertexArray( null );
 			}
 		}
+
+		this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
+		this.ComposePasses();
+		this.RenderPostFX();
 	}
 };

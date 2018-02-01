@@ -12,10 +12,11 @@
             var testObj = new EEE.Obj();
             var testObj2 = new EEE.Obj();
             testObj.drawable = EEE.ASSETS.meshes["cube"];
-            testObj2.drawable = EEE.ASSETS.meshes["cube"];
+            testObj2.drawable = EEE.ASSETS.meshes["quad"];
             EEE.scene.AddObj(testObj);
             EEE.scene.AddObj(testObj2);
-            
+
+            /*
             testObj.AddModule({
                 firstFrame : function(){
                     console.log("firstFrame");
@@ -25,44 +26,51 @@
                     this.owner.matrixNeedsUpdate = true;
                 }
             });
-            
+            */
             testObj2.AddModule({
                 firstFrame : function(){
                     this.owner.position.x = 2;
                     this.owner.matrixNeedsUpdate = true;
                 },
                 update : function(){
-                    this.owner.rotation.SetEuler(-EEE.time / 2,0,0);
+                    this.owner.rotation.SetEuler(-EEE.time / 2,0,0,"XYZ");
                     this.owner.matrixNeedsUpdate = true;
                 }
             });
-
+            
             testObj2.SetParent(testObj);
 
-            EEE.scene.activeCamera.position.z = -7;
+            EEE.scene.activeCamera.position.z = 5;
             EEE.scene.activeCamera.UpdateMatrix();
-            /*
+            
             EEE.scene.activeCamera.AddModule({
                 dir : new EEE.Vec3(),
+                velocity : new EEE.Vec3(0,0,0),
                 horizontalRot : 0,
                 verticalRot : 0,
                 update : function(){
                     // rotation
-                    this.horizontalRot += EEE.input.mouse.delta.x*EEE.deltaTime*0.1;
-                    this.owner.rotation.SetEuler( 0, this.horizontalRot, 0 );
+                    this.horizontalRot -= EEE.input.mouse.delta.x*EEE.deltaTime*0.06;
+                    this.verticalRot -= EEE.input.mouse.delta.y*EEE.deltaTime*0.06;
+                    this.verticalRot = Math.min( Math.max(-Math.PI/2, this.verticalRot), Math.PI/2 );
+
+                    this.owner.rotation.SetEuler(this.verticalRot,this.horizontalRot,0, "YXZ");
+
+                    this.owner.UpdateMatrix();
                     // position
-                    this.dir.Set( 0,0,0 );
+                    this.dir.Set(0,0,0);
+                    this.velocity.MultiplyScalar( 0.95 );
                     if(EEE.input.GetBindingState("up")){
-                        this.dir.z += 1;
-                    }
-                    if(EEE.input.GetBindingState("down")){
                         this.dir.z -= 1;
                     }
+                    if(EEE.input.GetBindingState("down")){
+                        this.dir.z += 1;
+                    }
                     if(EEE.input.GetBindingState("left")){
-                        this.dir.x += 1;
+                        this.dir.x -= 1;
                     }
                     if(EEE.input.GetBindingState("right")){
-                        this.dir.x -= 1;
+                        this.dir.x += 1;
                     }
                     if(EEE.input.GetBindingState("jump")){
                         this.dir.y += 1;
@@ -71,12 +79,13 @@
                         this.dir.y -= 1;
                     }
                     this.dir.Normalize();
-                    this.dir.MultiplyScalar(EEE.deltaTime);
-                    this.owner.position.Add(this.dir);
-                    this.owner.matrixNeedsUpdate = true;
+                    this.dir.MultiplyScalar(EEE.deltaTime*0.1);
+                    this.velocity.Add(this.dir);
+                    
+                    this.owner.Translate( this.velocity );
                 }
             });
-            */
+            
         </script>
     </body>
 </html>
