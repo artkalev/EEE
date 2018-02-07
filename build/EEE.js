@@ -53,6 +53,40 @@ EEE.GRAPHICS_SPRITE = 0x0011;
 // copied from : https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/Constants
 // used to define gl properties in graphics objects before gl context is present
 
+// GL data types
+EEE.GL_BYTE = 0x1400;
+EEE.GL_UNSIGNED_BYTE = 0x1401;
+EEE.GL_SHORT = 0x1402;
+EEE.GL_UNSIGNED_SHORT = 0x1403;
+EEE.GL_INT = 0x1404;
+EEE.GL_UNSIGNED_INT = 0x1405;
+EEE.GL_FLOAT = 0x1406;
+
+// GL Pixel formats
+EEE.GL_DEPTH_COMPONENT = 0x1902;
+EEE.GL_ALPHA = 0x1906;
+EEE.GL_RGB = 0x1907;
+EEE.GL_RGBA = 0x1908;
+EEE.GL_LUMINANCE = 0x1909;
+EEE.GL_LUMINANCE_ALPHA = 0x910A;
+
+EEE.GL_DEPTH_COMPONENT24 = 0x81A6;
+
+// GL Pixel Types
+EEE.GL_UNSIGNED_BYTE = 0x1401;
+EEE.GL_UNSIGNED_SHORT_4444 = 0x8033;
+EEE.GL_UNSIGNED_SHORT_5551 = 0x8034;
+EEE.GL_UNSIGNED_SHORT_565 = 0x8063;
+EEE.GL_UNSIGNED_INT_2_10_10_10_REV = 0x8368;
+EEE.GL_UNSIGNED_INT_10F_11F_11F_REV = 0x8C3B;
+EEE.GL_UNSIGNED_INT_5_9_9_9_REV = 0x8C3E;
+EEE.GL_FLOAT_32_UNSIGNED_INT_24_8_REV = 0x8DAD;
+EEE.GL_UNSIGNED_INT_24_8 = 0x84FA;
+EEE.GL_HALF_FLOAT = 0x140B;
+EEE.GL_RG = 0x8227;
+EEE.GL_RG_INTEGER = 0x8228;
+EEE.GL_INT_2_10_10_10_REV = 0x8D9F;
+
 // primitive drawtypes
 EEE.GL_POINTS = 0x0000;
 EEE.GL_LINES = 0x0001;
@@ -115,9 +149,11 @@ EEE.GL_CLAMP_TO_EDGE = 0x812F;
 EEE.GL_MIRRORED_REPEAT = 0x8370;
 
 // uniform types
-EEE.UNIFORM_SAMPLER2D = 0x0000;
-EEE.UNIFORM_MATRIX4 = 0x0001;
-EEE.UNIFORM_VEC4 = 0x0002;
+EEE.UNIFORM_INT = 0x0001;
+EEE.UNIFORM_MAT4 = 0x0002;
+EEE.UNIFORM_VEC2 = 0x0003;
+EEE.UNIFORM_VEC3 = 0x0004;
+EEE.UNIFORM_VEC4 = 0x0005;
 
 // global variables
 EEE.time = Date.now() / 1000;
@@ -130,6 +166,12 @@ EEE.ASSETS = {
     audio : {},
     prefabs : {}
 };
+
+/* src/math/Misc.js */
+
+function IsPowerOfTwo(n) {
+    return n && (n & (n - 1)) === 0;
+}
 
 /* src/math/Vec2.js */
 
@@ -313,9 +355,9 @@ EEE.forward = new EEE.Vec3(0,0,1);
 /* src/math/Vec4.js */
 
 EEE.Vec4 = class Vec4{
-    constructor(){
+    constructor(x,y,z,w){
 		this.type = EEE.MATH_VECTOR4;
-        this.data = new Float32Array(4);
+        this.data = new Float32Array([x||0,y||0,z||0,w||0]);
     }
     get x(){ return this.data[0]; }
     get y(){ return this.data[1]; }
@@ -327,6 +369,14 @@ EEE.Vec4 = class Vec4{
     set z(v){ this.data[2] = v; }
     set w(v){ this.data[3] = v; }
 
+	Set(x,y,z,w){
+		this.data[0] = x;
+		this.data[1] = y;
+		this.data[2] = z;
+		this.data[3] = w;
+		return this;
+	}
+	
     LengthSqr(){
 		return this.data[0]*this.data[0] + this.data[1]*this.data[1] + this.data[2]*this.data[2]  + this.data[3]*this.data[3];
 	}
@@ -944,14 +994,14 @@ EEE.Drawable = class Drawable{
         this.isInitialized = false;
     }
 
-    Initialize( gl ){
+    Initialize(){
         // creating and initializing gl buffers here.
         this.isInitialized = true;
     }
 
-    Draw( gl, pass ){
+    Draw( pass ){
         if(!this.isInitialized){
-            this.Initialize( gl );
+            this.Initialize();
         }
         // glsl program is setup by renderer before calling this function!
         // only drawing function for this specific object here
@@ -959,63 +1009,6 @@ EEE.Drawable = class Drawable{
         //      
         //  bind : attribute buffers and pointers
         //  draw : gl.drawElements() or gl.drawArrays()
-    }
-}
-
-/* src/graphics/Texture.js */
-
-EEE.Texture = class Texture{
-    constructor(src){
-        this.width = 2;
-        this.height = 2;
-        this.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAMAAADz0U65AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAMAUExURWIGAm0dEGBAIGRbNHhBKnpYRGp1TnpqYXV4in1psXJ9uGd65VyBQFyXUl2fbVOzVVG4aGqHaV6jkWiPk2ONvX/ZloMPCYolGp4sFp8rKqUOB6IbFr0hF6wwOrQkJLE2Io5COb1CNqJnOIxVV51ESpZRb7JqT75racsyLNQ9RslLT4digsVrhpqZTZmsbaeRYrKMfozBep26lJ2+sbqHm7WVu6injKexrbGgppu+yJ+z4a6mxKWzyKmp4IzLlo7MrwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMPE0VMAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAZdEVYdFNvZnR3YXJlAHBhaW50Lm5ldCA0LjAuMTM0A1t6AAAAUElEQVQYV2NgkGDS5THkF2WQYlRi1uO1E2AQk2fRZzPis2eQEVdjNRM0FmKQVlQwYDcXtmTQkFRXtuCwEWGQ01Ix0bbmsmLQlNVRNeW05QYA/ScH4WqSlkEAAAAASUVORK5CYII=";
-        this.glTexture = null;
-        this.needsUpdate = true;
-    }
-    Initialize(gl){
-        this.glTexture = gl.createTexture();
-        gl.bindTexture(gl.TEXTURE_2D, this.glTexture);
-        gl.texImage2D(
-            gl.TEXTURE_2D,
-            0,
-            gl.RGBA,
-            1,1,0,
-            gl.RGBA,
-            gl.UNSIGNED_BYTE,
-            new Uint8Array([0,0,255,255])
-        );
-        
-        var img = new Image();
-        var self = this;
-        img.onload = function(){
-            gl.bindTexture(gl.TEXTURE_2D, self.glTexture);
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-            gl.generateMipmap(gl.TEXTURE_2D);
-        };
-        img.src = this.src;
-        this.needsUpdate = false;
-    }
-}
-
-/* src/graphics/Texture2D.js */
-
-EEE.Texture2D = class Texture2D extends EEE.Texture{
-    constructor(){
-        super();
-        this.wrapS = EEE.GL_REPEAT;
-        this.wrapT = EEE.GL_REPEAT;
-        this.minFilter = EEE.GL_LINEAR;
-        this.magFilter = EEE.GL_LINEAR;
-    }
-}
-
-/* src/graphics/Texture3D.js */
-
-EEE.Texture3D = class Texture3D extends EEE.Texture{
-    constructor(){
-        super();
     }
 }
 
@@ -1051,7 +1044,7 @@ EEE.Mesh = class Mesh extends EEE.Drawable{
         this.gl_indices = null;
     }
 
-    Initialize(gl){
+    Initialize(){
         super.Initialize();
 
         this.VAO = gl.createVertexArray();
@@ -1106,7 +1099,7 @@ EEE.Mesh = class Mesh extends EEE.Drawable{
         gl.bindBuffer( gl.ARRAY_BUFFER, this.gl_uvs1 );
         gl.enableVertexAttribArray(4);
         gl.vertexAttribPointer( 4, 2, gl.FLOAT, false, 0, 0 );
-        
+		
         gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, this.gl_indices );
 
         gl.bindVertexArray(null);
@@ -1115,7 +1108,7 @@ EEE.Mesh = class Mesh extends EEE.Drawable{
         
     }
 
-    Draw( gl, pass ){
+    Draw( pass ){
         super.Draw(gl, pass);
         gl.bindVertexArray( this.VAO );
         gl.drawElements( pass.drawMode, this.indices.length, gl.UNSIGNED_SHORT, 0);
@@ -1134,11 +1127,11 @@ EEE.ASSETS.meshes["triangle"] = new EEE.Mesh(
 
 EEE.ASSETS.meshes["quad"] = new EEE.Mesh(
     "quad",
-    [ -0.5,-0.5, 0.0,    -0.5, 0.5, 0.0,    0.5, 0.5, 0.0,    0.5, -0.5, 0.0  ],
-    [ 0,0,127, 0,0,127, 0,0,127, 0,0,127 ],
-    [ 0,0,0,255,   0,255,0,255,  0,0,255,255,   255,0,0,255  ],
-    [ 0.0,0.0,  0.0,1.0,  1.0,1.0,  1.0,0.0 ],
-    [ 0,1,2, 0,2,3 ]
+    /* position */[ -0.5,-0.5, 0.0,    -0.5, 0.5, 0.0,    0.5, 0.5, 0.0,    0.5, -0.5, 0.0  ],
+    /* normal */[ 0,0,127, 0,0,127, 0,0,127, 0,0,127 ],
+    /* color */[ 0,0,0,255,   0,255,0,255,  0,0,255,255,   255,0,0,255  ],
+    /* uv0 */[ 0.0,0.0,  0.0,1.0,  1.0,1.0,  1.0,0.0 ],
+    /* index */[ 0,1,2, 0,2,3 ]
 );
 
 EEE.ASSETS.meshes["cube"] = new EEE.Mesh(
@@ -1289,7 +1282,7 @@ EEE.Init = function(){
     console.log("Started 'EEE' Initialization");
     EEE.loader = new EEE.Loader();
     EEE.renderer = new EEE.Renderer();
-    if(!EEE.renderer.gl){ alert("WebGL failed to initialize! Your browser/hardware does not support WebGL?"); return; }
+    if(!gl){ alert("WebGL failed to initialize! Your browser/hardware does not support WebGL?"); return; }
     EEE.input = new EEE.Input(); // input needs for renderer canvas to be present
     EEE.scene = new EEE.Scene();
     EEE.gui = new EEE.GUI();
@@ -1421,7 +1414,6 @@ EEE.Scene = class Scene{
             this.objects[i].Update();
         }
     }
-    
 };
 
 /* src/core/Obj.js */
@@ -1524,7 +1516,7 @@ EEE.Camera = class Camera extends EEE.Obj{
         this.height = 0;
         this.fov = 90;
         this.near = 0.1;
-        this.far = 100.0;
+        this.far = 1000.0;
         this.aspect = 1;
         this.matrix_projection = new EEE.Mat4().PerspectiveProjection(
             this.fov,
@@ -1532,7 +1524,11 @@ EEE.Camera = class Camera extends EEE.Obj{
             this.near,
             this.far
         );
+		this.matrix_projectionInverse = new EEE.Mat4().GetInverse( this.matrix_projection );
         this.matrix_view = new EEE.Mat4().Identity();
+        this.matrix_viewInverse = new EEE.Mat4().GetInverse(this.matrix_view);
+		
+		this.postfx = [];
     }
 
     UpdateProjectionMatrix(){
@@ -1543,6 +1539,7 @@ EEE.Camera = class Camera extends EEE.Obj{
             this.near,
             this.far
         );
+		this.matrix_projectionInverse = new EEE.Mat4().GetInverse( this.matrix_projection );
     }
 
     UpdateMatrix(){
@@ -1553,53 +1550,179 @@ EEE.Camera = class Camera extends EEE.Obj{
             0,0,1,0,
             -this.position.x, -this.position.y, -this.position.z
         ]).Multiply( this.rotation.GetMat4() );
+		this.matrix_viewInverse = new EEE.Mat4().GetInverse(this.matrix_view);
 
     }
 }
 
-/* src/rendering/FrameBuffer.js */
+/* src/rendering/DataTexture2D.js */
 
-EEE.Framebuffer = class FrameBuffer{
-    constructor(){
-        this.width = 512;
-        this.height = 512;
-        this.glTexture = null;
+
+
+/* src/rendering/Texture2D.js */
+
+EEE.Texture2D = class Texture2D{
+	constructor( width, height, internalFormat, pixelFormat, pixelType, url ){
+		this.width = 2;
+		this.height = 2;
+		this.internalFormat = internalFormat || EEE.GL_RGBA;
+		this.pixelFormat = pixelFormat || EEE.GL_RGBA;
+		this.pixelType = pixelType || EEE.GL_UNSIGNED_BYTE;
+		this.glTexture = null;
+		this.source = null;
+		this.url = url;
+		if(this.url != null){
+			this.Load( this.url );
+		}
+	}
+	
+	Initialize(){
+		this.glTexture = gl.createTexture();
+		gl.bindTexture( gl.TEXTURE_2D, this.glTexture );
+		gl.texImage2D(
+			gl.TEXTURE_2D,
+			0,
+			this.internalFormat,
+			this.width,
+			this.height,
+			0,
+			this.pixelFormat,
+			this.pixelType,
+			this.source
+		);
+		gl.pixelStorei(gl.UNPACK_ALIGNMENT, 2);
+		
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+	}
+	
+	Resize(width, height){
+		this.width = width;
+		this.height = height;
+		gl.bindTexture( gl.TEXTURE_2D, this.glTexture );
+		gl.texImage2D(
+			gl.TEXTURE_2D,
+			0,
+			this.internalFormat,
+			this.width,
+			this.height,
+			0,
+			this.pixelFormat,
+			this.pixelType,
+			null
+		);
+	}
+	
+	Load( url ){
+		this.source = new Image();
+		var self = this;
+		this.source.addEventListener("load",function(){
+			self.width = self.source.width;
+			self.height = self.source.height;
+			
+			if(self.glTexture == null){ self.glTexture = gl.createTexture(); }
+			gl.bindTexture( gl.TEXTURE_2D, self.glTexture );
+			gl.texImage2D(
+				gl.TEXTURE_2D,
+				0,
+				self.internalFormat,
+				self.width,
+				self.height,
+				0,
+				self.pixelFormat,
+				self.pixelType,
+				self.source
+			);
+			if( IsPowerOfTwo(self.width) && IsPowerOfTwo(self.height)){
+				gl.generateMipmap(gl.TEXTURE_2D);
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+			}
+			console.log("texture loaded", self);
+		});
+		this.source.src = url;
+		return this;
+	}
+}
+
+
+
+/* src/rendering/GBuffer.js */
+
+EEE.GBuffer = class GBuffer{
+    constructor(width, height){
+        this.width = width;
+        this.height = height;
+		this.depth = new EEE.Texture2D( this.width, this.height, EEE.GL_DEPTH_COMPONENT24, EEE.GL_DEPTH_COMPONENT, EEE.GL_UNSIGNED_INT );
+        this.normalDepth = new EEE.Texture2D( this.width, this.height, gl.RGBA, gl.RGBA, EEE.GL_UNSIGNED_BYTE );
+		this.diffuseColor = new EEE.Texture2D( this.width, this.height, EEE.GL_RGBA, EEE.GL_RGBA, EEE.GL_UNSIGNED_BYTE );
+		this.metallicSmoothness = new EEE.Texture2D( this.width, this.height, EEE.GL_RGBA, EEE.GL_RGBA, EEE.GL_UNSIGNED_BYTE );
         this.glFramebuffer = null;
         this.isInitialized = false;
         this.needsUpdate = true;
     }
 
-    Initialize(gl){
-        const attachment = gl.COLOR_ATTACHMENT0;
-        this.glTexture = gl.createTexture();
-        gl.bindTexture(gl.TEXTURE_2D, this.glTexture);
-        gl.texImage2D( 
-            gl.TEXTURE_2D,
-            0,
-            gl.RGBA,
-            this.width,
-            this.height,
-            0,
-            gl.RGBA,
-            gl.UNSIGNED_BYTE,
-            null
-        );
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-
+    Initialize(){
+		this.depth.Initialize(gl);
+		this.normalDepth.Initialize(gl);
+		this.diffuseColor.Initialize(gl);
+		this.metallicSmoothness.Initialize(gl);
+		
+		gl.activeTexture(gl.TEXTURE0);
+		gl.bindTexture( gl.TEXTURE_2D, this.depth.glTexture );
+		
+		gl.activeTexture(gl.TEXTURE1);
+		gl.bindTexture( gl.TEXTURE_2D, this.normalDepth.glTexture );
+		
+		gl.activeTexture(gl.TEXTURE2);
+		gl.bindTexture( gl.TEXTURE_2D, this.diffuseColor.glTexture );
+		
+		gl.activeTexture(gl.TEXTURE3);
+		gl.bindTexture( gl.TEXTURE_2D, this.metallicSmoothness.glTexture );
+		
         this.glFramebuffer = gl.createFramebuffer();
-        gl.bindFramebuffer( gl.FRAMEBUFFER, this.glFramebuffer );
-        gl.framebufferTexture2D(gl.FRAMEBUFFER, attachment, gl.TEXTURE_2D, this.glTexture, 0);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-        gl.bindTexture(gl.TEXTURE_2D, null);
+        gl.bindFramebuffer( gl.DRAW_FRAMEBUFFER, this.glFramebuffer );
+		gl.framebufferTexture2D(gl.DRAW_FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, this.depth.glTexture, 0);
+        gl.framebufferTexture2D(gl.DRAW_FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.normalDepth.glTexture, 0);
+		gl.framebufferTexture2D(gl.DRAW_FRAMEBUFFER, gl.COLOR_ATTACHMENT1, gl.TEXTURE_2D, this.diffuseColor.glTexture, 0);
+        gl.framebufferTexture2D(gl.DRAW_FRAMEBUFFER, gl.COLOR_ATTACHMENT2, gl.TEXTURE_2D, this.metallicSmoothness.glTexture, 0);
+		
+		var status = gl.checkFramebufferStatus(gl.DRAW_FRAMEBUFFER);
+        if (status != gl.FRAMEBUFFER_COMPLETE) {
+            console.log('fb status: ' + status.toString(16));
+            return;
+        }
+		
+		gl.drawBuffers([
+            gl.COLOR_ATTACHMENT0,
+            gl.COLOR_ATTACHMENT1,
+			gl.COLOR_ATTACHMENT2
+        ]);
+		
+		
+        gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, null);
     }
+	
+	ResizeTextures(){
+		this.depth.Resize(this.width, this.height);
+		this.normalDepth.Resize(this.width, this.height);
+		this.diffuseColor.Resize(this.width, this.height);
+		this.metallicSmoothness.Resize(this.width, this.height);
+	}
+	
+	Resize( width, height ){
+		this.width = width;
+		this.height = height;
+		this.needsUpdate = true;
+	}
 
-    Update(gl){
+    Update(){
         if(this.needsUpdate){
             if(this.glFramebuffer == null){
-                this.Initialize(gl);
+                this.Initialize();
             }
+			this.ResizeTextures();
             this.needsUpdate = false;
         }
     }
@@ -1627,22 +1750,19 @@ EEE.SHADERLIB.attributes = `
     layout(location = 4) in vec2 a_uv1;
 `;
 EEE.SHADERLIB.uniforms = `
-    layout (std140) uniform u_blockGlobal {
-        mat4 u_matrixView;
-        mat4 u_matrixProjection;
-        float u_time;
-        float u_deltaTime;
-    };
-    
-    layout (std140) uniform u_blockModel {
-        mat4 u_matrixModel;
-        float u_opacity;
-    };
-
-    layout (std140) uniform u_blockMaterial {
-        vec4 u_diffuseColor;
-        //vec3 u_emissiveColor;
-    };
+    uniform mat4 u_matrixView;
+    uniform mat4 u_matrixProjection;
+    uniform mat4 u_matrixModel;
+	
+	uniform sampler2D u_diffuseTexture;
+	uniform vec4 u_diffuseTextureTS;
+	
+	uniform sampler2D u_normalTexture;
+	uniform vec4 u_normalTextureTS;
+	
+	uniform sampler2D u_metallicSmoothnessTexture;
+	uniform sampler2D u_lightmapTexture;
+	uniform sampler2D u_lightmapDirTexture;
 `;
 EEE.SHADERLIB.vertex = {
     default :   
@@ -1651,17 +1771,21 @@ EEE.SHADERLIB.vertex = {
         EEE.SHADERLIB.uniforms + `
 
         out vec3 v_vertex;
+		out vec4 v_vertexWorld;
         out vec3 v_normal;
         out vec3 v_normalWorld;
         out vec4 v_color;
         out vec2 v_uv0;
+        out mat3 v_normalMatrix;
         
         void main(){
         	v_vertex = a_vertex;
+			v_vertexWorld = u_matrixModel * vec4( a_vertex, 1.0 );
             v_normal = normalize(a_normal);
-            v_normalWorld = (u_matrixModel * vec4(a_normal, 0.0)).xyz;
+            v_normalWorld = normalize(mat3(u_matrixModel) * v_normal);
         	v_color = a_color;
         	v_uv0 = a_uv0;
+			
         	gl_Position = u_matrixProjection * u_matrixView * u_matrixModel * vec4( a_vertex, 1.0 );
         	gl_PointSize = 10.0;
         }
@@ -1675,28 +1799,158 @@ EEE.SHADERLIB.vertex = {
         void main(){
             v_vertex = a_vertex;
             v_uv0 = a_uv0;
-            gl_Position = vec4( a_vertex, 1.0 );
+            gl_Position = vec4( a_vertex*2.0, 1.0 );
         }
 
     `
 };
 EEE.SHADERLIB.fragment = {
-    default:[
-        "#version 300 es",
-        "precision mediump float;",
-        "in vec3 v_vertex;",
-        "in vec3 v_normal;",
-        "in vec3 v_normalWorld;",
-        "in vec4 v_color;",
-        "in vec2 v_uv0;",
-        "out vec4 out_color;",
+    default:
+		EEE.SHADERLIB.header +
+        `precision mediump float;
+        in vec3 v_vertex;
+		in vec4 v_vertexWorld;
+        in vec3 v_normal;
+        in vec3 v_normalWorld;
+        in vec4 v_color;
+        in vec2 v_uv0;
+		in mat3 v_normalMatrix;`+
 
-        EEE.SHADERLIB.uniforms,
-
-        "void main(){",
-        "	out_color = vec4( v_normalWorld*0.5+0.5, 1.0 );",
-        "}"
-    ].join("\n"),
+        EEE.SHADERLIB.uniforms+`
+		
+		layout(location = 0) out vec4 normalDepth;
+        layout(location = 1) out vec4 diffuseColor;
+		layout(location = 2) out vec4 metallicSmoothness;
+		
+		mat3 TBN( vec3 p, vec3 N, vec2 uv ){
+			vec3 dp1 = dFdx(p);
+			vec3 dp2 = dFdy(p);
+			vec2 duv1 = dFdx(uv);
+			vec2 duv2 = dFdy(uv);
+			// solve the linear system
+			vec3 dp2perp = cross(dp2, N);
+			vec3 dp1perp = cross(N, dp1);
+			vec3 T = dp2perp * duv1.x + dp1perp * duv2.x;
+			vec3 B = dp2perp * duv1.y + dp1perp * duv2.y;
+			// construct a scale-invariant frame
+			float invmax = inversesqrt(max(dot(T,T), dot(B,B)));
+			return mat3(T * invmax, B * invmax, N);
+		}
+		
+        void main(){
+			mat3 tbn = TBN( v_vertexWorld.xyz, -v_normalWorld, v_uv0 );
+			vec3 normalTex = texture( u_normalTexture, v_uv0 * u_normalTextureTS.zw ).xyz*2.0-1.0;
+			normalTex.y *= -1.0;
+			vec3 normal = -normalize( tbn * normalTex );
+			
+        	normalDepth = vec4( normal*0.5+0.5, gl_FragCoord.z );
+			diffuseColor = texture( u_diffuseTexture, v_uv0 * u_diffuseTextureTS.zw );
+			metallicSmoothness = vec4( v_vertexWorld.xyz , 1.0 );
+        }
+	`,
+	deferredCompose:
+		EEE.SHADERLIB.header + `
+		in vec3 v_vertex;
+		in vec2 v_uv0;
+		
+		uniform sampler2D u_depth;
+		uniform sampler2D u_normalDepth;
+		uniform sampler2D u_diffuseColor;
+		uniform sampler2D u_normMetalSmoothness;
+		
+		uniform vec3 u_cameraPosition;
+		uniform mat4 u_matrixView;
+		uniform mat4 u_matrixViewInverse;
+		uniform mat4 u_matrixProjection;
+		uniform mat4 u_matrixProjectionInverse;
+		uniform float u_near;
+		uniform float u_far;
+		
+		out vec4 out_color;
+		
+		float LinearDepth( float depth ){
+			return (2.0 * u_near) / (u_near + u_far - depth * (u_far - u_near));
+		}
+		
+		vec3 WorldPositionFromDepth( float depth, vec2 uv ){
+			vec4 p = u_matrixProjectionInverse * (vec4(uv, depth, 1.0) * 2.0 - 1.0);
+			vec3 viewspace_position = p.xyz / p.w;
+			return vec3(u_matrixViewInverse * vec4(viewspace_position, 1));
+		}
+		
+		vec3 CalculateLight( vec3 worldPos, vec3 worldNormal, vec3 color, vec3 lightPos, float falloff ){
+			vec3 L = vec3(0.0);
+			vec3 lw = lightPos-worldPos;
+			float f = max(0.0,(falloff - length(lw))/falloff);
+			L = color * max( 0.0, dot( normalize(lw), worldNormal )) * f;
+			return L;
+		}
+		
+		vec3 AccumulateLight( vec3 worldPos, vec3 worldNormal ){
+			vec3 L = vec3(0.0,0.0,0.0);
+			
+			L += CalculateLight(
+				worldPos,
+				worldNormal,
+				vec3(1.0,1.0,1.0),
+				vec3(0.0,2.0,3.0),
+				10.0
+			);
+			
+			L += CalculateLight(
+				worldPos,
+				worldNormal,
+				vec3(0.0,1.0,1.0),
+				vec3(2.0,2.0,-3.0),
+				10.0
+			);
+			return L;
+		}
+		
+		void main(){
+			float depth = texture( u_depth, v_uv0 ).x;
+			vec4 normalDepth = texture( u_normalDepth, v_uv0 );
+			vec4 diffuseColor = texture( u_diffuseColor, v_uv0 );
+			
+			vec3 worldPos = WorldPositionFromDepth( depth, v_uv0 );
+			vec3 worldNormal = normalDepth.xyz*2.0-1.0;
+			
+			vec3 lightPos = vec3(0.0,3.0,0.0);
+			float lightRadius = 10.0;
+			
+			vec3 L = AccumulateLight( worldPos, worldNormal );
+			
+			out_color = vec4( diffuseColor.xyz * L, 1.0 );
+			
+			// draw debug views
+			
+			vec2 c = v_uv0*4.0;
+			bool m0 = c.x < 1.0 && c.y < 1.0;
+			vec3 debugNormal = texture( u_normalDepth, c ).xyz;
+			
+			bool m1 = c.x < 1.0 && c.y < 2.0 && c.y > 1.0;
+			vec3 debugDiffuse = texture( u_diffuseColor, c - vec2(0.0,1.0) ).xyz;
+			
+			bool m2 =  c.x < 1.0 && c.y < 3.0 && c.y > 2.0;
+			vec3 debugWorldPos = WorldPositionFromDepth( texture( u_depth, c - vec2(0.0,2.0) ).x, c - vec2(0.0,2.0) );
+			
+			bool m3 =  c.x < 1.0 && c.y < 4.0 && c.y > 3.0;
+			vec3 debugLight = AccumulateLight( 
+				WorldPositionFromDepth( texture( u_depth, c - vec2(0.0,3.0) ).x, c - vec2(0.0,3.0) ),
+				texture( u_normalDepth, c - vec2(0.0,3.0) ).xyz 
+			);
+			
+			if(m0 == true){
+				out_color.xyz = debugNormal*2.0-1.0;
+			}else if( m1 == true ){
+				out_color.xyz = debugDiffuse;
+			}else if( m2 == true ){
+				out_color.xyz = debugWorldPos;
+			}else if( m3 == true ){
+				out_color.xyz = debugLight;
+			}
+		}
+	`,
     screenQuad:
         EEE.SHADERLIB.header + `
         in vec3 v_vertex;
@@ -1724,7 +1978,18 @@ EEE.MaterialPass = class MaterialPass{
         this.vertexShaderSource = vertexShaderSource;
         this.fragmentShaderSource = fragmentShaderSource;
         
-        this.uniforms = uniforms || {};
+        this.uniforms = uniforms || {
+			"u_matrixModel":{ type : EEE.UNIFORM_MAT4, value:null, location:0 },
+			"u_matrixView":{ type : EEE.UNIFORM_MAT4, value:null, location:0 },
+			"u_matrixProjection":{ type : EEE.UNIFORM_MAT4, value:null, location:0 },
+			"u_diffuseTexture":{ type : EEE.UNIFORM_INT, value:5, location:0 },
+			"u_diffuseTextureTS":{ type : EEE.UNIFORM_VEC4, value:null, location:0 },
+			"u_metallicSmoothnessTexture":{ type : EEE.UNIFORM_INT, value:6, location:0 },
+			"u_normalTexture":{ type : EEE.UNIFORM_INT, value:7, location:0 },
+			"u_normalTextureTS":{ type : EEE.UNIFORM_VEC4, value:null, location:0 },
+			"u_lightmapTexture":{ type : EEE.UNIFORM_INT, value:8, location:0 },
+			"u_lightmapDirTexture":{ type : EEE.UNIFORM_INT, value:9, location:0 }
+		};
         this.useUniformBlocks = useUniformBlocks;
         // gl shaders and program
         this.vertexShader = null;
@@ -1735,12 +2000,13 @@ EEE.MaterialPass = class MaterialPass{
         
         // drawing options
         this.enableDepth = true;
+		this.enableStencil = true;
         this.cull = EEE.GL_CULL_FRONT;
         this.depthFunc = EEE.GL_DEPTH_LEQUAL;
         this.drawMode = EEE.GL_TRIANGLES;
     }
 
-    Compile( gl ){
+    Compile(){
         this.vertexShader = gl.createShader(gl.VERTEX_SHADER);
         this.fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
 
@@ -1771,30 +2037,61 @@ EEE.MaterialPass = class MaterialPass{
         gl.bindAttribLocation(this.program, 3, "a_uv0");
         gl.bindAttribLocation(this.program, 4, "a_uv1");
 
-        for(var name in this.uniforms){
-            this.uniforms[name][location] = gl.getUniformLocation(this.program, name);
-        }
-
         gl.linkProgram(this.program);
-        if(this.useUniformBlocks){
-            gl.uniformBlockBinding(this.program, gl.getUniformBlockIndex(this.program,"u_blockGlobal"), 0);
-            gl.uniformBlockBinding(this.program, gl.getUniformBlockIndex(this.program,"u_blockModel"), 1);
-            gl.uniformBlockBinding(this.program, gl.getUniformBlockIndex(this.program,"u_blockMaterial"), 2);
+		
+		for(var name in this.uniforms){
+            this.uniforms[name].location = gl.getUniformLocation(this.program, name);
         }
     }
 
-    ApplyOptions( gl ){
+    ApplyOptions(){
         if(this.enableDepth){ gl.enable(gl.DEPTH_TEST); }
+		if(this.enableStencil){ gl.enable(gl.DEPTH_TEST); }
         gl.enable(gl.CULL_FACE);
         gl.cullFace( this.cull );
     }
 
-    Use(gl){
+    Use(){
         if(this.program == null){
-            this.Compile(gl);
+            this.Compile();
         }
-        this.ApplyOptions(gl);
+        this.ApplyOptions();
         gl.useProgram( this.program );
+		for(var name in this.uniforms){
+			switch( this.uniforms[name].type ){
+				case EEE.UNIFORM_MAT4:
+					gl.uniformMatrix4fv( 
+						this.uniforms[name].location, 
+						false, 
+						this.uniforms[name].value 
+					);
+					break;
+				case EEE.UNIFORM_FLOAT:
+					gl.uniform1f(
+						this.uniforms[name].location,
+						this.uniforms[name].value
+					);
+					break;
+				case EEE.UNIFORM_INT:
+					gl.uniform1i(
+						this.uniforms[name].location,
+						this.uniforms[name].value
+					);
+					break;
+				case EEE.UNIFORM_VEC3:
+					gl.uniform3fv(
+						this.uniforms[name].location,
+						this.uniforms[name].value
+					);
+					break;
+				case EEE.UNIFORM_VEC4:
+					gl.uniform4fv(
+						this.uniforms[name].location,
+						this.uniforms[name].value
+					);
+					break;
+			}
+		}
     }
 }
 
@@ -1803,6 +2100,26 @@ EEE.MaterialPass = class MaterialPass{
 EEE.Material = class Material{
     constructor( passes ){
         this.diffuseColor = new EEE.Color(1,1,1,1);
+		
+		this.textures = [
+			null, // gl.TEXTURE4 // diffuseTexture
+			null, // gl.TEXTURE5 // metallicSmoothnessTexture
+			null, // gl.TEXTURE6 // normalTexture
+			null, // gl.TEXTURE7 // lightmap
+			null  // gl.TEXTURE8 // lightmapDir
+		];
+		
+		this.textureTransforms = [
+			new EEE.Vec4(0,0,1,1),
+			new EEE.Vec4(0,0,1,1),
+			new EEE.Vec4(0,0,1,1),
+			new EEE.Vec4(0,0,1,1),
+			new EEE.Vec4(0,0,1,1)
+		];
+		
+		this.lightmap = null;
+		this.lightmapDir = null;
+		
         this.passes = passes || 
             [
                 new EEE.MaterialPass( 
@@ -1813,63 +2130,99 @@ EEE.Material = class Material{
             ];
         this.u_blockMaterial = null;
     }
-
-    Update( gl ){
-        if(this.u_blockMaterial == null){
-            this.u_blockMaterial = gl.createBuffer();
-            gl.bindBuffer( gl.UNIFORM_BUFFER, this.u_blockMaterial );
-            gl.bufferData(gl.UNIFORM_BUFFER, 48, gl.DYNAMIC_DRAW);
-            gl.bindBuffer( gl.UNIFORM_BUFFER, null);
-        }
-        gl.bindBuffer( gl.UNIFORM_BUFFER, this.u_blockMaterial );
-        gl.bufferSubData( gl.UNIFORM_BUFFER, 0, this.diffuseColor.data );
-        gl.bindBuffer( gl.UNIFORM_BUFFER, null);
-    }
+		
+	get diffuseTexture(){ return this.textures[0]; }
+	set diffuseTexture(t){ this.textures[0] = t; }
+	
+	get diffuseTextureTS(){ return this.textureTransforms[0]; }
+	set diffuseTextureTS(t){ this.textureTransforms[0] = t; }
+	
+	get metallicSmoothnessTexture(){ return this.textures[1]; }
+	set metallicSmoothnessTexture(t){ this.textures[1] = t; }
+	
+	get normalTexture(){ return this.textures[2]; }
+	set normalTexture(t){ this.textures[2] = t; }
+	
+	get normalTextureTS(){ return this.textureTransforms[2]; }
+	set normalTextureTS(t){ this.textureTransforms[2] = t; }
+	
+	BindTextures(){
+		for( var i = 0; i < this.textures.length; i++ ){
+			if( this.textures[i] != null){
+				if(this.textures[i].glTexture != null){
+					gl.activeTexture( gl.TEXTURE5+i );
+					gl.bindTexture( gl.TEXTURE_2D, this.textures[i].glTexture);
+				}
+			}
+		}
+	}
+	
+    Update(){
+    
+	}
 }
 
 /* src/rendering/Renderer.js */
 
+var gl = null;
 EEE.Renderer = class Renderer{
 	constructor(){
 		this.u_globalBlock = null;
 
-		this.pixelScale = 1;
+		this.pixelScale = 1.0;
 		this.canvas = document.createElement("canvas");
 		this.canvas.style.position = "absolute";
 		this.canvas.style.width = "100%";
 		this.canvas.style.height = "100%";
 		this.canvas.style.left = "0";
 		this.canvas.style.top = "0";
-		this.gl = this.canvas.getContext("webgl2", {antialias:0});
-		if(!this.gl){ console.log("No WebGL2 Support!"); return; }
+		this.canvas.style.imageRendering = "pixelated";
+		gl = this.canvas.getContext("webgl2", {antialias:0});
+		if(!gl){ console.log("No WebGL2 Support!"); return; }
 		document.body.appendChild( this.canvas );
+		
+		this.gbuffer = new EEE.GBuffer(this.canvas.width, this.canvas.height);
 
-		this.deferredBuffer0 = new EEE.Framebuffer();
-
-		// global uniform block
-		// updated on every Render()
-		this.u_globalBlock = this.gl.createBuffer();
-		this.gl.bindBuffer(this.gl.UNIFORM_BUFFER, this.u_globalBlock);
-		this.gl.bufferData( this.gl.UNIFORM_BUFFER, 136, this.gl.DYNAMIC_DRAW );
-		/* view matrix */ this.gl.bufferSubData( this.gl.UNIFORM_BUFFER, 0, new Float32Array(16), 0, 0 );
-		/* proj matrix */ this.gl.bufferSubData( this.gl.UNIFORM_BUFFER, 64, new Float32Array(16), 0, 0 );
-		/* time */        this.gl.bufferSubData( this.gl.UNIFORM_BUFFER, 128, new Float32Array(1), 0, 0 );
-		/* delta time */  this.gl.bufferSubData( this.gl.UNIFORM_BUFFER, 132, new Float32Array(1), 0, 0 );
-		this.gl.bindBuffer(this.gl.UNIFORM_BUFFER, null);
-
+		this.defaultTexture = new EEE.Texture2D();
+		this.defaultTexture.width = 2;
+		this.defaultTexture.height = 2;
+		//this.defaultTexture.source = new Uint8Array([ 255,0,0,255 ]);
+		this.defaultTexture.source = new Uint8Array([
+			255,  0,  0,255,    0,255,  0,255,
+			  0,  0,255,255,    255,255,255,255
+		]);
+		this.defaultTexture.Initialize();
+		
+		console.log(this.defaultTexture);	
+		
 		this.defaultMaterial = new EEE.Material();
 		this.composePassesMaterial = new EEE.Material([
 			new EEE.MaterialPass( 
 				EEE.SHADERLIB.vertex.screenQuad, 
-				EEE.SHADERLIB.fragment.screenQuad,
-				false
+				EEE.SHADERLIB.fragment.deferredCompose,
+				false,
+				{
+					"u_depth":{ type:EEE.UNIFORM_INT, value:0, location:null },
+					"u_normalDepth":{ type:EEE.UNIFORM_INT, value:1, location:null },
+					"u_diffuseColor":{ type:EEE.UNIFORM_INT, value:2, location:null },
+					"u_normMetalSmoothness":{ type:EEE.UNIFORM_INT, value:3, location:null },
+					"u_matrixView":{type:EEE.UNIFORM_MAT4},
+					"u_matrixViewInverse":{type:EEE.UNIFORM_MAT4},
+					"u_matrixProjection":{type:EEE.UNIFORM_MAT4},
+					"u_matrixProjectionInverse":{type:EEE.UNIFORM_MAT4},
+					"u_cameraPosition":{type:EEE.UNIFORM_VEC3},
+					"u_near":{type:EEE.UNIFORM_FLOAT},
+					"u_far":{type:EEE.UNIFORM_FLOAT},
+					"u_pointLights":{}
+				}
 			)
 		]);
 	}
 
 	OnResize(){
-		this.canvas.width = Math.round(window.innerWidth / this.pixelScale);
-		this.canvas.height = Math.round(window.innerHeight / this.pixelScale);
+		this.canvas.width = Math.round(window.innerWidth);
+		this.canvas.height = Math.round(window.innerHeight);
+		this.gbuffer.Resize( this.canvas.width*this.pixelScale,this.canvas.height*this.pixelScale );
 	}
 
 	RenderGUI( gui ){
@@ -1878,18 +2231,33 @@ EEE.Renderer = class Renderer{
 		}
 	}
 
-	ComposePasses(){
-		this.gl.bindTexture( this.gl.TEXTURE2D, this.deferredBuffer0.glTexture );
-		this.composePassesMaterial.passes[0].Use(this.gl);
+	ComposePasses( camera ){
+		gl.viewport(0,0,this.canvas.width,this.canvas.height);
+		gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
+		var pass = this.composePassesMaterial.passes[0];
 		
-		EEE.ASSETS.meshes["quad"].Draw( this.gl, this.composePassesMaterial.passes[0] );
+		pass.uniforms.u_cameraPosition.value = camera.position.data;
+		pass.uniforms.u_near.value = camera.near;
+		pass.uniforms.u_far.value = camera.far;
+		pass.uniforms.u_matrixView.value = camera.matrix_view.data;
+		pass.uniforms.u_matrixProjection.value = camera.matrix_projection.data;
+		pass.uniforms.u_matrixViewInverse.value = camera.matrix_viewInverse.data;
+		pass.uniforms.u_matrixProjectionInverse.value = camera.matrix_projectionInverse.data;
+		pass.Use();
+		
+		EEE.ASSETS.meshes["quad"].Draw( pass );
 	}
 
-	RenderPostFX( ){
-
+	RenderPostFX( material ){
+		// todo
 	}
-
+	
+	Blit( src, dst, program ){
+		
+	}
+	
 	Render( scene, camera ){
+		
 		if( this.canvas.width != camera.width || this.canvas.height != camera.height ){
 			camera.width = this.canvas.width;
 			camera.height = this.canvas.height;
@@ -1897,67 +2265,50 @@ EEE.Renderer = class Renderer{
 		}
 
 		// update and bind framebuffers
-		this.deferredBuffer0.Update(this.gl);
-		this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.deferredBuffer0.glFramebuffer);
+		this.gbuffer.Update();
+		gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, this.gbuffer.glFramebuffer);
 
-		/* set global uniformblock values used by all materials */
-		this.gl.bindBuffer(this.gl.UNIFORM_BUFFER, this.u_globalBlock);
-		this.gl.bufferSubData( this.gl.UNIFORM_BUFFER, 0, camera.matrix_view.data);
-		this.gl.bufferSubData( this.gl.UNIFORM_BUFFER, 64, camera.matrix_projection.data);
-		this.gl.bufferSubData( this.gl.UNIFORM_BUFFER, 128, new Float32Array([EEE.time]));
-		this.gl.bufferSubData( this.gl.UNIFORM_BUFFER, 132, new Float32Array([EEE.deltaTime]));
-		this.gl.bindBuffer(this.gl.UNIFORM_BUFFER, null);
-
-		/* u_globalBlock uniform block is bound at 0 ! */
-		this.gl.bindBufferBase( this.gl.UNIFORM_BUFFER, 0, this.u_globalBlock );
-
-		this.gl.clearColor( 
+		gl.activeTexture( gl.TEXTURE5 );
+		gl.bindTexture( gl.TEXTURE_2D, this.defaultTexture.glTexture );
+		gl.activeTexture( gl.TEXTURE7 );
+		gl.bindTexture( gl.TEXTURE_2D, this.defaultTexture.glTexture );
+		
+		gl.clearColor( 
 			scene.backgroundColor.r,
 			scene.backgroundColor.g,
 			scene.backgroundColor.b,
 			scene.backgroundColor.a
 		);
-		this.gl.viewport(0,0,this.canvas.width,this.canvas.height);
-		this.gl.clear( this.gl.COLOR_BUFFER_BIT, this.gl.DEPTH_BUFFER_BIT );
-
-		
+		gl.viewport(0,0,this.gbuffer.width,this.gbuffer.height);
+		gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
 
 		for(var i = 0; i < scene.objects.length; i++){
 			var o = scene.objects[i];
 			if(o.drawable){
-
-				if(o.u_modelBlock == null){
-					o.u_modelBlock = this.gl.createBuffer();
-					this.gl.bindBuffer( this.gl.UNIFORM_BUFFER, o.u_modelBlock );
-					this.gl.bufferData( this.gl.UNIFORM_BUFFER, 68, this.gl.DYNAMIC_DRAW );
-					this.gl.bindBuffer( this.gl.UNIFORM_BUFFER, null );
-				}
-
-				this.gl.bindBuffer( this.gl.UNIFORM_BUFFER, o.u_modelBlock );
-				this.gl.bufferSubData( this.gl.UNIFORM_BUFFER, 0, o.localToWorld.data);
-				this.gl.bufferSubData( this.gl.UNIFORM_BUFFER, 64, new Float32Array([o.opacity]));
-				this.gl.bindBuffer( this.gl.UNIFORM_BUFFER, null );
-
-				this.gl.bindBufferBase( this.gl.UNIFORM_BUFFER, 1, o.u_modelBlock );
-
-				var material = o.drawable.material || this.defaultMaterial;
-
-				material.Update(this.gl);
-
-				this.gl.bindBufferBase( this.gl.UNIFORM_BUFFER, 2, material.u_blockMaterial );
-
+				var material = o.material || o.drawable.material || this.defaultMaterial;
+				
+				material.Update();
+				material.BindTextures();
+				
 				for(var passIndex = 0; passIndex < material.passes.length; passIndex++){
 					var pass = material.passes[passIndex];
-					pass.Use(this.gl);
-					o.drawable.Draw( this.gl, pass );
+					pass.uniforms.u_matrixModel.value = o.localToWorld.data;
+					pass.uniforms.u_matrixView.value = camera.matrix_view.data;
+					pass.uniforms.u_matrixProjection.value = camera.matrix_projection.data;
+					
+					pass.uniforms.u_diffuseTextureTS.value = material.diffuseTextureTS.data;
+					pass.uniforms.u_normalTextureTS.value = material.normalTextureTS.data;
+					
+					pass.Use();
+					
+					o.drawable.Draw( pass );
 				}
-				this.gl.bindVertexArray( null );
+				gl.bindVertexArray( null );
 			}
 		}
 
-		this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
-		this.ComposePasses();
-		this.RenderPostFX();
+		gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, null);
+		this.ComposePasses(camera);
 	}
 };
 

@@ -9,7 +9,18 @@ EEE.MaterialPass = class MaterialPass{
         this.vertexShaderSource = vertexShaderSource;
         this.fragmentShaderSource = fragmentShaderSource;
         
-        this.uniforms = uniforms || {};
+        this.uniforms = uniforms || {
+			"u_matrixModel":{ type : EEE.UNIFORM_MAT4, value:null, location:0 },
+			"u_matrixView":{ type : EEE.UNIFORM_MAT4, value:null, location:0 },
+			"u_matrixProjection":{ type : EEE.UNIFORM_MAT4, value:null, location:0 },
+			"u_diffuseTexture":{ type : EEE.UNIFORM_INT, value:5, location:0 },
+			"u_diffuseTextureTS":{ type : EEE.UNIFORM_VEC4, value:null, location:0 },
+			"u_metallicSmoothnessTexture":{ type : EEE.UNIFORM_INT, value:6, location:0 },
+			"u_normalTexture":{ type : EEE.UNIFORM_INT, value:7, location:0 },
+			"u_normalTextureTS":{ type : EEE.UNIFORM_VEC4, value:null, location:0 },
+			"u_lightmapTexture":{ type : EEE.UNIFORM_INT, value:8, location:0 },
+			"u_lightmapDirTexture":{ type : EEE.UNIFORM_INT, value:9, location:0 }
+		};
         this.useUniformBlocks = useUniformBlocks;
         // gl shaders and program
         this.vertexShader = null;
@@ -20,12 +31,13 @@ EEE.MaterialPass = class MaterialPass{
         
         // drawing options
         this.enableDepth = true;
+		this.enableStencil = true;
         this.cull = EEE.GL_CULL_FRONT;
         this.depthFunc = EEE.GL_DEPTH_LEQUAL;
         this.drawMode = EEE.GL_TRIANGLES;
     }
 
-    Compile( gl ){
+    Compile(){
         this.vertexShader = gl.createShader(gl.VERTEX_SHADER);
         this.fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
 
@@ -56,29 +68,60 @@ EEE.MaterialPass = class MaterialPass{
         gl.bindAttribLocation(this.program, 3, "a_uv0");
         gl.bindAttribLocation(this.program, 4, "a_uv1");
 
-        for(var name in this.uniforms){
-            this.uniforms[name][location] = gl.getUniformLocation(this.program, name);
-        }
-
         gl.linkProgram(this.program);
-        if(this.useUniformBlocks){
-            gl.uniformBlockBinding(this.program, gl.getUniformBlockIndex(this.program,"u_blockGlobal"), 0);
-            gl.uniformBlockBinding(this.program, gl.getUniformBlockIndex(this.program,"u_blockModel"), 1);
-            gl.uniformBlockBinding(this.program, gl.getUniformBlockIndex(this.program,"u_blockMaterial"), 2);
+		
+		for(var name in this.uniforms){
+            this.uniforms[name].location = gl.getUniformLocation(this.program, name);
         }
     }
 
-    ApplyOptions( gl ){
+    ApplyOptions(){
         if(this.enableDepth){ gl.enable(gl.DEPTH_TEST); }
+		if(this.enableStencil){ gl.enable(gl.DEPTH_TEST); }
         gl.enable(gl.CULL_FACE);
         gl.cullFace( this.cull );
     }
 
-    Use(gl){
+    Use(){
         if(this.program == null){
-            this.Compile(gl);
+            this.Compile();
         }
-        this.ApplyOptions(gl);
+        this.ApplyOptions();
         gl.useProgram( this.program );
+		for(var name in this.uniforms){
+			switch( this.uniforms[name].type ){
+				case EEE.UNIFORM_MAT4:
+					gl.uniformMatrix4fv( 
+						this.uniforms[name].location, 
+						false, 
+						this.uniforms[name].value 
+					);
+					break;
+				case EEE.UNIFORM_FLOAT:
+					gl.uniform1f(
+						this.uniforms[name].location,
+						this.uniforms[name].value
+					);
+					break;
+				case EEE.UNIFORM_INT:
+					gl.uniform1i(
+						this.uniforms[name].location,
+						this.uniforms[name].value
+					);
+					break;
+				case EEE.UNIFORM_VEC3:
+					gl.uniform3fv(
+						this.uniforms[name].location,
+						this.uniforms[name].value
+					);
+					break;
+				case EEE.UNIFORM_VEC4:
+					gl.uniform4fv(
+						this.uniforms[name].location,
+						this.uniforms[name].value
+					);
+					break;
+			}
+		}
     }
 }

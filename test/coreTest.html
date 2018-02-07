@@ -8,25 +8,55 @@
     <body>
         <script>
             EEE.Init();
-
+			
+			var textures = {
+				brick : new EEE.Texture2D().Load("textures/brick0.jpg"),
+				brickNormal : new EEE.Texture2D().Load("textures/brick0Normal.jpg"),
+				grass : new EEE.Texture2D().Load("textures/grass.jpeg"),
+				grassNormal : new EEE.Texture2D().Load("textures/grassNormal.jpg")
+			};
+			
+			var brickMaterial = new EEE.Material();
+			brickMaterial.diffuseTexture = textures.brick;
+			brickMaterial.normalTexture = textures.brickNormal;
+			
+			var grassMaterial = new EEE.Material();
+			grassMaterial.diffuseTexture = textures.grass;
+			grassMaterial.diffuseTextureTS.Set( 0,0,8,8 );
+			grassMaterial.normalTexture = textures.grassNormal;
+			grassMaterial.normalTextureTS.Set( 0,0,8,8 );
+			
+			var ground = new EEE.Obj();
             var testObj = new EEE.Obj();
             var testObj2 = new EEE.Obj();
+			
+			testObj.material = brickMaterial;
+			testObj2.material = brickMaterial;
+			ground.material = grassMaterial;
+			
+			ground.drawable = EEE.ASSETS.meshes["quad"];
             testObj.drawable = EEE.ASSETS.meshes["cube"];
-            testObj2.drawable = EEE.ASSETS.meshes["quad"];
-            EEE.scene.AddObj(testObj);
-            EEE.scene.AddObj(testObj2);
+            testObj2.drawable = EEE.ASSETS.meshes["cube"];
+			EEE.scene.AddObj( ground );
+            EEE.scene.AddObj( testObj );
+            EEE.scene.AddObj( testObj2 );
 
-            /*
+            ground.scale.Set(16,16,16);
+			ground.position.y = -0.5;
+			ground.rotation.SetEuler(Math.PI/2, 0,0, "XYZ");
+			ground.matrixNeedsUpdate = true;
+			
+			/*
             testObj.AddModule({
                 firstFrame : function(){
                     console.log("firstFrame");
                 },
                 update : function(){
-                    this.owner.rotation.SetEuler(0,EEE.time / 2,0);
+                    this.owner.rotation.SetEuler(0,EEE.time / 2,0,"XYZ");
                     this.owner.matrixNeedsUpdate = true;
                 }
             });
-            */
+            
             testObj2.AddModule({
                 firstFrame : function(){
                     this.owner.position.x = 2;
@@ -37,10 +67,14 @@
                     this.owner.matrixNeedsUpdate = true;
                 }
             });
-            
+            */
+			
+			testObj2.rotation.SetEuler(Math.PI / 2,0,0,"XYZ");
+			testObj2.position.x = 2;
+			testObj2.matrixNeedsUpdate = true;
             testObj2.SetParent(testObj);
 
-            EEE.scene.activeCamera.position.z = 5;
+            EEE.scene.activeCamera.position.Set( -1,2,3 );
             EEE.scene.activeCamera.UpdateMatrix();
             
             EEE.scene.activeCamera.AddModule({

@@ -8,14 +8,14 @@ EEE.Drawable = class Drawable{
         this.isInitialized = false;
     }
 
-    Initialize( gl ){
+    Initialize(){
         // creating and initializing gl buffers here.
         this.isInitialized = true;
     }
 
-    Draw( gl, pass ){
+    Draw( pass ){
         if(!this.isInitialized){
-            this.Initialize( gl );
+            this.Initialize();
         }
         // glsl program is setup by renderer before calling this function!
         // only drawing function for this specific object here

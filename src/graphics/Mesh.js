@@ -20,7 +20,7 @@ EEE.Mesh = class Mesh extends EEE.Drawable{
         this.gl_indices = null;
     }
 
-    Initialize(gl){
+    Initialize(){
         super.Initialize();
 
         this.VAO = gl.createVertexArray();
@@ -75,7 +75,7 @@ EEE.Mesh = class Mesh extends EEE.Drawable{
         gl.bindBuffer( gl.ARRAY_BUFFER, this.gl_uvs1 );
         gl.enableVertexAttribArray(4);
         gl.vertexAttribPointer( 4, 2, gl.FLOAT, false, 0, 0 );
-        
+		
         gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, this.gl_indices );
 
         gl.bindVertexArray(null);
@@ -84,7 +84,7 @@ EEE.Mesh = class Mesh extends EEE.Drawable{
         
     }
 
-    Draw( gl, pass ){
+    Draw( pass ){
         super.Draw(gl, pass);
         gl.bindVertexArray( this.VAO );
         gl.drawElements( pass.drawMode, this.indices.length, gl.UNSIGNED_SHORT, 0);
@@ -103,11 +103,11 @@ EEE.ASSETS.meshes["triangle"] = new EEE.Mesh(
 
 EEE.ASSETS.meshes["quad"] = new EEE.Mesh(
     "quad",
-    [ -0.5,-0.5, 0.0,    -0.5, 0.5, 0.0,    0.5, 0.5, 0.0,    0.5, -0.5, 0.0  ],
-    [ 0,0,127, 0,0,127, 0,0,127, 0,0,127 ],
-    [ 0,0,0,255,   0,255,0,255,  0,0,255,255,   255,0,0,255  ],
-    [ 0.0,0.0,  0.0,1.0,  1.0,1.0,  1.0,0.0 ],
-    [ 0,1,2, 0,2,3 ]
+    /* position */[ -0.5,-0.5, 0.0,    -0.5, 0.5, 0.0,    0.5, 0.5, 0.0,    0.5, -0.5, 0.0  ],
+    /* normal */[ 0,0,127, 0,0,127, 0,0,127, 0,0,127 ],
+    /* color */[ 0,0,0,255,   0,255,0,255,  0,0,255,255,   255,0,0,255  ],
+    /* uv0 */[ 0.0,0.0,  0.0,1.0,  1.0,1.0,  1.0,0.0 ],
+    /* index */[ 0,1,2, 0,2,3 ]
 );
 
 EEE.ASSETS.meshes["cube"] = new EEE.Mesh(

@@ -1,5 +1,6 @@
 #include core/header.js
 
+#include math/Misc.js
 #include math/Vec2.js
 #include math/Vec3.js
 #include math/Vec4.js
@@ -11,9 +12,6 @@
 #include physics/Bounds3D.js
 
 #include graphics/Drawable.js
-#include graphics/Texture.js
-#include graphics/Texture2D.js
-#include graphics/Texture3D.js
 #include graphics/Color.js
 #include graphics/Mesh.js
 #include graphics/Mesh2D.js
@@ -28,7 +26,9 @@
 #include core/Obj.js
 #include core/Camera.js
 
-#include rendering/FrameBuffer.js
+#include rendering/DataTexture2D.js
+#include rendering/Texture2D.js
+#include rendering/GBuffer.js
 #include rendering/SHADERS.js
 #include rendering/MaterialPass.js
 #include rendering/Material.js

@@ -5,7 +5,7 @@ EEE.Camera = class Camera extends EEE.Obj{
         this.height = 0;
         this.fov = 90;
         this.near = 0.1;
-        this.far = 100.0;
+        this.far = 1000.0;
         this.aspect = 1;
         this.matrix_projection = new EEE.Mat4().PerspectiveProjection(
             this.fov,
@@ -13,7 +13,11 @@ EEE.Camera = class Camera extends EEE.Obj{
             this.near,
             this.far
         );
+		this.matrix_projectionInverse = new EEE.Mat4().GetInverse( this.matrix_projection );
         this.matrix_view = new EEE.Mat4().Identity();
+        this.matrix_viewInverse = new EEE.Mat4().GetInverse(this.matrix_view);
+		
+		this.postfx = [];
     }
 
     UpdateProjectionMatrix(){
@@ -24,6 +28,7 @@ EEE.Camera = class Camera extends EEE.Obj{
             this.near,
             this.far
         );
+		this.matrix_projectionInverse = new EEE.Mat4().GetInverse( this.matrix_projection );
     }
 
     UpdateMatrix(){
@@ -34,6 +39,7 @@ EEE.Camera = class Camera extends EEE.Obj{
             0,0,1,0,
             -this.position.x, -this.position.y, -this.position.z
         ]).Multiply( this.rotation.GetMat4() );
+		this.matrix_viewInverse = new EEE.Mat4().GetInverse(this.matrix_view);
 
     }
 }

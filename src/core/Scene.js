@@ -16,5 +16,4 @@ EEE.Scene = class Scene{
             this.objects[i].Update();
         }
     }
-    
 };

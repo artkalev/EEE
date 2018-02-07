@@ -1,7 +1,7 @@
 EEE.Vec4 = class Vec4{
-    constructor(){
+    constructor(x,y,z,w){
 		this.type = EEE.MATH_VECTOR4;
-        this.data = new Float32Array(4);
+        this.data = new Float32Array([x||0,y||0,z||0,w||0]);
     }
     get x(){ return this.data[0]; }
     get y(){ return this.data[1]; }
@@ -13,6 +13,14 @@ EEE.Vec4 = class Vec4{
     set z(v){ this.data[2] = v; }
     set w(v){ this.data[3] = v; }
 
+	Set(x,y,z,w){
+		this.data[0] = x;
+		this.data[1] = y;
+		this.data[2] = z;
+		this.data[3] = w;
+		return this;
+	}
+	
     LengthSqr(){
 		return this.data[0]*this.data[0] + this.data[1]*this.data[1] + this.data[2]*this.data[2]  + this.data[3]*this.data[3];
 	}
